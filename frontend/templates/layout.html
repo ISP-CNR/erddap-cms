@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en" class="h-100">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-social.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='codemirror/lib/codemirror.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/DataTables/addons.css') }}" />  
+    <link rel="stylesheet"  href="{{ url_for('static', filename='css/DataTables/datatables.min.css')}}">
+    <link rel="stylesheet"  href="{{ url_for('static', filename='css/custom.css')}}">
+    <link rel="stylesheet"  href="{{ url_for('static', filename='css/lib/tom-select.bootstrap5.min.css')}}">
+    
+    <script src="{{ url_for('static', filename='js/lib/jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/DataTables/datatables.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/DataTables/ellipsis.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='codemirror/lib/codemirror.js') }}"></script>
+    <script src="{{ url_for('static', filename='codemirror/mode/xml/xml.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lib/to-xml.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="{{ url_for('static', filename='js/lib/tom-select.complete.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+
+    <title>ERDDAP CMS</title>
+  </head>
+  <body class="d-flex flex-column h-100">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container-md align-items-center">
+        <a class="d-flex align-items-center navbar-brand" href="{{url_for('index')}}">
+          <img height="40px" src="{{ url_for('static', filename='img/logo_header.png') }}"/>
+          <span class="ms-2">ERDDAP - Content Management System</span>
+        </a>
+        {% if current_user %}
+          <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+              <li class="nav-item">
+                {% if current_user.is_admin() %}
+                  <a class="text-light link-secondary nav-link p-3" href="{{ url_for('users') }}" alt="Users"><i class="bi bi-gear-fill"></i> Users</a>
+                {% elif current_user.active %}
+                  <a class="text-light link-secondary nav-link p-3" href="{{ url_for('profile') }}" alt="Profile"><i class="bi bi-gear-fill"></i> My profile</a>
+                {% endif %}
+              </li>
+              <li class="nav-item">
+                <a class="text-light link-secondary nav-link p-3" href="{{ url_for('logout') }}"><i class="bi bi-person-plus-fill"></i> Logout {{ current_user }}</a>
+              </li>
+            </ul>
+          </div>
+        {% endif %}
+      </div>
+    </nav>
+
+    {% if ( (request.path != url_for('index')) and (request.path != url_for('login', provider="local")) ) %}
+      <div class="container-sm bg-light p-0">
+        <nav class="navbar bg-body-tertiary border-bottom border-secondary-subtle">
+          <a class="px-3" style="text-decoration: none;" href="{{ back_path }}">
+            <i class="bi bi-arrow-left"></i>
+            Back
+          </a>
+        </nav>
+      </div>
+    {% endif %}
+
+
+    <main class="container-sm bg-light rounded flex-grow-1 py-3">
+      {% block content %}{% endblock content %}
+    </main>
+    
+    <footer style="min-height: 64px;" class="navbar navbar-expand-lg bg-transparent border-top border-primary-">
+      <div class="container-md">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <div class="navbar-text">Brought to you by</div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark" href="https://www.isp.cnr.it">Italian Institute of Polar Sciences</a>
+          </li>          
+          <li class="nav-item">
+            <a class="nav-link text-dark" href="https://baltig.cnr.it/cnr-isp/erddap-cms/-/blob/main/LICENSE">License</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-dark" href="https://baltig.cnr.it/cnr-isp/erddap-cms/-/blob/main/README.md">About</a>
+          </li>
+          <li>
+            <a class="nav-link text-dark" href="https://baltig.cnr.it/cnr-isp/erddap-cms">Source code</a>
+          </li>
+        </ul>
+      </div>      
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/bootstrapConfig.js') }}"></script>
+  </body>
+</html>

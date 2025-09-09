@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<erddapDatasets>
+<!-- GENERAL INFORMATION
+The information in this file specifies which datasets your ERDDAP will serve.
+The initial version of this file has a few examples which should work for you.
+But after your initial experiments with ERDDAP, 
+you should replace them with information for your datasets.
+
+You can change this document (e.g., add datasets, change metadata) while ERDDAP is running. 
+The changes will be detected the next time this document is read
+(as often as loadDatasetsMinMinutes).
+
+Each dataset has a reloadEveryNMinutes value (default = 10080 (one week)).
+When this document is reread, datasets that haven't been been reloaded in 
+their reloadEveryNMinutes will be reloaded.
+You only need to specify a reloadEveryNMinutes value if you anticipate that
+the dataset will change periodically.
+
+If this document has an xml error, processing will stop and an email
+will be sent to emailEverythingTo as specified in setup.xml.
+
+If you want to remove a dataset while ERDDAP is running, add 
+    active="false"
+to the dataset tag.  For example,
+    <dataset type="EDDGridFromDap" datasetID="erdMHchla8day" active="false">
+
+For more information, see 
+https://coastwatch.pfel.noaa.gov/erddap/download/setupDatasetsXml.html
+-->
+
+<!-- The tags below are described in setupDatasetsXml.html.
+     The defaults listed below are as of ERDDAP v2.00. -->
+<cacheMinutes></cacheMinutes>                                     <!-- default=60 --> 
+<decompressedCacheMaxGB></decompressedCacheMaxGB>                 <!-- default=10 --> 
+<decompressedCacheMaxMinutesOld></decompressedCacheMaxMinutesOld> <!-- default=15 --> 
+<drawLandMask></drawLandMask>                                     <!-- "over", "under" (default), "outline", or "off" -->
+<emailDiagnosticsToErdData></emailDiagnosticsToErdData>           <!-- "true (default) or "false" -->
+<graphBackgroundColor></graphBackgroundColor>                     <!-- 0xAARRGGBB, default is 0xffccccff -->
+<loadDatasetsMinMinutes></loadDatasetsMinMinutes>                 <!-- usually=default=15 -->
+<loadDatasetsMaxMinutes></loadDatasetsMaxMinutes>                 <!-- default=60 -->
+<logLevel></logLevel> <!-- "warning" (fewest messages), "info" (default), or "all" (most messages) -->
+<nGridThreads></nGridThreads>                                     <!-- default=1 -->
+<nTableThreads></nTableThreads>                                   <!-- default=1 -->
+<partialRequestMaxBytes></partialRequestMaxBytes>                 <!-- default=490000000 -->
+<partialRequestMaxCells></partialRequestMaxCells>                 <!-- default=10000000 -->
+<slowDownTroubleMillis></slowDownTroubleMillis>                   <!-- default=1000 -->
+<unusualActivity></unusualActivity>                               <!-- default=10000 -->
+<!-- The defaults for the following tags are in messages.xml. -->
+<startHeadHtml5><![CDATA[
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8">
+<title>ERDDAPTitlePlaceholder</title>
+<link rel="shortcut icon" href="&erddapUrl;/images/logo.png">
+<link href="&erddapUrl;/images/erddap2.css" rel="stylesheet" type="text/css">
+<meta name="viewport" content="width=device-width, initial-scale=1">  
+]]></startHeadHtml5>                                
+<endBodyHtml5></endBodyHtml5>
+<standardLicense></standardLicense>
+<standardContact></standardContact>
+<standardDataLicenses></standardDataLicenses>
+<standardDisclaimerOfEndorsement></standardDisclaimerOfEndorsement>
+<standardDisclaimerOfExternalLinks></standardDisclaimerOfExternalLinks>
+<standardGeneralDisclaimer></standardGeneralDisclaimer>
+
+<standardPrivacyPolicy><![CDATA[
+<br>&nbsp;
+<hr>
+<h2><a class="selfLink" id="privacyPolicy" href="#privacyPolicy" rel="help">Privacy Policy</a></h2>
+ERDDAP follows 
+<a rel="bookmark" href="https://www.noaa.gov/protecting-your-privacy"
+  >NOAA's Privacy Policy Guidelines</a>.
+]]></standardPrivacyPolicy>
+
+<startBodyHtml5><![CDATA[ 
+<body>
+<table class="compact nowrap" style="width:100%; background-color:#f4f5f5;"> 
+  <tr> 
+    <td style="text-align:center; width:80px;"><a rel="bookmark"
+      href="BASE_URL/erddap"><img 
+      title="ERDDAPTitlePlaceholder" 
+      src="&erddapUrl;/images/logo.png" alt="LOGO"
+      style="vertical-align:middle; height:7em;"></a></td> 
+    <td style="text-align:left; font-size:x-large; color:#000000; ">
+      <strong>ERDDAPTitlePlaceholder</strong>
+      <br><small><small><small>Easier access to scientific data</small></small></small>
+      </td> 
+    <td style="text-align:right; font-size:small;"> 
+      &loginInfo; &nbsp; &nbsp;
+      <br>
+      <ul style="list-style-type: none; margin: 0; padding:0;">
+        <li>Brought to you by <a title="CNR - Institute of Polar Sciences" rel="bookmark" href="https://www.isp.cnr.it">CNR-ISP</a></li>
+        <li><a title="Manage your datasets" rel="bookmark" href="CMS_URL">Manage your datasets</a></li>
+        <!--<li><a title="Geospatial Catalogue" rel="bookmark" href="GEONETWORK_URL">Metadata Catalogue</a></li>-->
+      </ul>
+    </td> 
+  </tr> 
+</table>
+]]></startBodyHtml5>
+
+<theShortDescriptionHtml><![CDATA[ 
+<h1>ERDDAP</h1>
+ERDDAP is a data server that gives you a simple, consistent way to download 
+subsets of scientific datasets in common file formats and make graphs and maps. 
+This particular ERDDAP installation has oceanographic data
+(for example, data from satellites and buoys).
+
+[standardShortDescriptionHtml]
+
+]]></theShortDescriptionHtml>
+
+<!-- If you want to refuse requests from certain clients
+  (e.g., to fend off a Denial of Service attack or an overly zealous web robot), 
+  add their numeric IP address (e.g., 123.45.67.89) to this comma-separated list. 
+  You can also replace the last number in an IP address with * to block 0-255 (e.g., 123.45.67.*).
+  See your ERDDAP daily report for a list/tally of the most active requesters. -->
+<requestBlacklist></requestBlacklist>
+
+<!-- If you want to prevent specific people from using the email/URL subscription
+     system, add their email addresses to this comma-separated list. 
+     You can use the name "*" to blacklist an entire domain, e.g., *@example.com .
+-->
+<subscriptionEmailBlacklist>your.email@yourinstitution.edu, some.name@company.com, 
+another.name@company.com, *@example.com</subscriptionEmailBlacklist>
+

@@ -1,0 +1,19 @@
+.hide {
+ display: none !important;
+}
+
+.btn.disabled,
+.fa[disabled],
+.disabled > .fa,
+[disabled] > .fa {
+  opacity: 0.4!important;
+  /*optional*/ cursor: not-allowed;
+  /*optional*/ pointer-events: none;
+}
+
+ 
+
+label[for=dt-length-0]
+{
+    margin-left:5px;
+}

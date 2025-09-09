@@ -1,0 +1,85 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="container h-100">
+  {% with messages = get_flashed_messages(with_categories=True) %}
+    {% if messages %}
+      {%- for category, message in messages %}
+      <div class="alert alert-{{ category }}" role="alert">
+        {{ message }}
+      </div>
+      {% endfor -%}
+    {% endif %}
+  {% endwith %}
+  <form id="registerForm" method="POST">
+    <div class="row d-flex justify-content-center align-items-center h-100">
+      <div class="col-xl-9">
+        <h1 class="mb-4">Registration Form</h1>
+        <div class="card" style="border-radius: 15px;">
+          <div class="card-body">
+            <div class="row align-items-center py-3">
+              <div class="col-md-3 ps-5">
+                <h6 class="mb-0">Name</h6>
+              </div>
+              <div class="col-md-9 pe-5">
+                <input type="text" name="name" class="form-control form-control-lg"
+                value="{{name}}" required="required" />
+              </div>
+            </div>
+            <div class="row align-items-center py-3">
+              <div class="col-md-3 ps-5">
+                <h6 class="mb-0">Email address</h6>
+              </div>
+              <div class="col-md-9 pe-5">
+                <input type="email" name="email" class="form-control form-control-lg" placeholder="example@example.com"
+                value="{{email}}" required="required" />
+              </div>
+            </div>
+            <hr class="mx-n3">
+            <div class="row align-items-center py-3">
+              <div class="col-md-3 ps-5">
+                <h6 class="mb-0">Password</h6>
+              </div>
+              <div class="col-md-9 pe-5">
+                <input type="password" name="password" minlength="6" class="form-control form-control-lg" value="{{password}}" required="required" />
+              </div>
+            </div>
+            <div class="row align-items-center py-2">
+              <div class="col-md-3 ps-5">
+                <h6 class="mb-0">Repeat password</h6>
+              </div>
+              <div class="col-md-9 pe-5">
+                <input type="password" name="confirm_password" class="form-control form-control-lg" value="{{password}}" required="required"/>
+              </div>
+            </div>
+            <hr class="mx-n3">
+            <div class="row align-items-center py-3">
+              <div class="col-md-3 ps-5">
+                <h6 class="mb-0">Affiliation</h6>
+              </div>
+              <div class="col-md-9 pe-5">
+                <!--
+                <input type="string" name="affiliation" class="form-control focus-ring focus-ring-danger"
+                  placeholder="es. Italian National Research Council - Institute of Polar Sciences"
+                  value="{{affiliation}}" required/>-->
+                  <input class="select-institute h-75" placeholder="Select an institute..." autocomplete="off" id="affiliation" name="affiliation" value="{{affiliation}}" required/>
+              </div>
+            </div>
+            <hr class="mx-n3">
+            <div class="row align-items-center py-3" id="captcha-container">
+              {{ captcha_html(captcha)|safe }}
+            </div>
+            <div class="px-5 py-4">
+              <button type="submit" class="btn btn-primary btn-lg">Register</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script src="{{ url_for('static', filename='js/register.js') }}"></script>
+
+{% endblock %}

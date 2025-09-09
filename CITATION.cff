@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Verazzo"
+  given-names: "Giulio"
+  orcid: "https://orcid.org/0009-0005-2985-6202"
+- family-names: "Cavaliere"
+  given-names: "Alice"
+  orcid: "https://orcid.org/0000-0002-2864-6028"
+title: "ERDDAP-CMS"
+version: 1.0
+date-released: 2025-09-03
+url: "https://baltig.cnr.it/cnr-isp/erddap-cms"

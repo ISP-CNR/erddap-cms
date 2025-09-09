@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+  <div class="container-fluid">
+    <div class="row d-flex justify-content-center">
+      <div class="col-12 col-md-8 col-lg-6">
+        <div class="card bg-white">
+          <div class="card-body p-5">
+            <p class=" mb-2"><img src="{{ url_for('static', filename='img/logo.png') }}" height="200px" class="rounded mx-auto d-block" alt="..."></p>
+            <h2 class="fw-bold text-center">Welcome to ERDDAP CMS!</h2>
+            {% with messages = get_flashed_messages(with_categories=True) %}
+                {% if messages %}
+                  {%- for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                      {{ message }}
+                    </div>
+                    {% endfor -%}
+                {% endif %}
+            {% endwith %}
+            {% if provider %}
+            <form class="mb-3 mt-md-4" method="post">
+              {% for field in form %}
+                {% if field.widget.__class__.__name__ == 'HiddenInput' %}
+                  {{ field() }}
+                {% else %}
+                  {% if field.errors %}
+                  <div id="validationServerUsernameFeedback" class="invalid-feedback">
+                    {{ field.errors|join(' / ') }}
+                  </div>
+                  {% endif %}
+                  <div class="mb-3">
+                    {{ field.label(class="form-label ") }}
+                    {{ field(class="form-control") }}
+                  </div>
+                  {% endif %}
+                {% endfor %}
+              <div class="d-grid">
+                <button class="btn btn-primary btn-lg" type="submit">Login</button>
+              </div>
+            </form>
+            <div class="text-center mb-2">No account? <a href="{{ url_for('register') }}">Register here</a></div>
+
+            {% if OAUTH == "True" %}
+
+              <p class="fw-semibold text-center">- or -</p>
+              <div class="text-center">
+                <a class="btn btn-block btn-social btn-github"  href="{{ url_for('login', provider="github", next=next) }}">
+                  <span class="fab fa-github"></span> Sign in with GitHub 
+                </a>
+              </div>
+              <div class="text-center mt-2">
+                <a class="btn btn-block btn-social" style="background-color:  #447405  !important; color:white;"   href="{{ url_for('login', provider="orcid", next=next) }}">
+                  <span class="fab fa-orcid header-orcid-fab"></span> Sign in with ORCID 
+                
+                </a>
+              </div>
+
+            {% endif %}
+
+            {% else %}
+            <ul>
+              {% for provider in providers|sort(attribute='title') %}
+                  <li><a href="{{ url_for(login_endpoint, provider=provider.name, next=next) }}">{{ provider.title }}</a></li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div> 
+</div>
+{% endblock %}

@@ -1,0 +1,217 @@
+<style>
+  .deleted_field {
+    text-decoration: line-through;
+  }
+  .deleted_field:after {
+    content: "[disabled]";
+  }
+
+</style>
+<form id="datasetForm" autocomplete="off">
+    <datalist id="standard_name_Options" >
+      {% for key, value in standard_names.items() %}
+      <option id="{{key}}" value="{{key}}" data-name="{{value['canonical_units']}}">{{key}}</option>
+      {% endfor %}
+    </datalist>
+    {% set global_required=["institution","title","summary","history","Conventions","infoUrl","license","creator_name","creator_email","contributor_name","contributor_email","contributor_institution","cdm_data_type","cdm_timeseries_variables",'standard_name_vocabulary', 'license'] %}
+    {% set atts = [] %}
+    {% for el in data.xml['dataset'] %}
+      {% if el == 'sourceUrl' %}   
+        <div class="card mb-3">
+            <div class="card-body">
+                {% with field_value=data.xml['dataset'][el],
+                        field_id="global_"+el,
+                        field_label=el,
+                        required=True,
+                        disabled=True %}
+                    {% include 'edit/field.html' %}
+                {% endwith %}
+            </div>
+        </div>
+        
+      {% elif el == 'addAttributes' %}          
+        <h5 class="fw-bold">Dataset Global attributes</h5>
+        <small>* required field</small>
+        <div class="card mb-3">
+          <div class="card-body">
+            {% for x in data.xml['dataset'][el]['att'] %}
+              {%- set _ = atts.append(x['@name']) %}
+              {% with field_value=x['#text'],
+                      field_id="global_"+x['@name'],
+                      field_label=x['@name'],
+                      required=x['@name'] in global_required,
+                      
+                      disabled=x['@name'] in ['sourceUrl','cdm_data_type', 'cdm_timeseries_variables']%}
+                {% include 'edit/field.html' %}
+              {% endwith %}
+            {% endfor %}
+
+            {% for z in global_required%}
+              {% if z not in atts %}
+                  {% with field_id="global_"+z,
+                          field_label=z,
+                          required=z%}
+                        {% if z!='cdm_timeseries_variables' or data['dataset']['cdm_data_type']!='Other'%}
+                          {% include 'edit/field.html' %}
+                        {% endif %}
+
+                  {% endwith %} 
+              {% endif %}
+              {% endfor %}
+           
+            {% with field_id="global_empty",
+                    field_label="empty",
+                    field_value=""%}
+              <span id = "global_field_template" class="d-none">
+                {% include 'edit/field.html' %}
+              </span>
+            {% endwith %}
+              <div class="row">
+                <div class="col col-lg-4">
+                  <div class="input-group mb-3 mt-4">
+                    <input type="text" class="form-control" placeholder="New attribute name" id="add_custom_field_name" required form="add_custom_field" autocomplete="off">
+                    <button class="btn btn-primary" type="button" onclick="add_custom_field()" id="add_custom_field_button">Add attribute <i class="fa-solid fa-circle-plus"></i></button>
+                  </div>
+                </div>
+              </div>
+            
+          </div>
+        </div>
+      {% elif el == 'axisVariable' %}
+        <h5 class="fw-bold" >Axis variables </h5>
+        <div class="card mb-3 bg-primary">
+          
+          <div class="card-body">
+            {% for x in data.xml['dataset'][el] %}
+            {% set var_num = loop.index|string %}
+            <div class="card mb-3" id="collapsible_{{x['@name']}}">
+           
+              <h6 class="fw-bold " data-bs-toggle="collapse" data-bs-target="#data_card_body{{var_num}}" aria-expanded="true" aria-controls="data_card_body{{var_num}}" >#{{var_num}} - {{x['destinationName']}}</h6>
+              <div id="data_card_body{{var_num}}" class="card-body collapse in" >                    
+                {% for y in x %}
+                  {% if y == 'addAttributes' %}
+                    <h6 class="fw-bold">Axis variable attributes</h6>
+                    <div id="card_attribute" class="card mb-3 border border-2 border-primary">
+                      <div class="card-body">
+                        {% set atts = [] %}
+                          {% for z in x[y]['att'] %}
+                              {%- set _ = atts.append(z['@name']) %}
+                              {% with field_value=z['#text'],
+                                      field_id="axis_varattr_"+var_num+z['@name'],
+                                      field_label=z['@name'],
+                                      required=z['@name'] in ['standard_name'],
+                                      disabled=z['@name'] in ['cf_role'] %}
+                                  {% include 'edit/field.html' %}
+                              {% endwith %}                       
+                          {% endfor %}
+                        
+                          {% for z in ["long_name","standard_name", "units", "_FillValue"]%}
+                            {% if z not in atts %}
+                                {% with field_id="axis_varattr_"+var_num+z,
+                                        field_label=z,
+                                        required=z in ['standard_name'] %}
+                                    {% include 'edit/field.html' %}
+                                {% endwith %} 
+                            {% endif %}
+                          {% endfor %}
+                          
+                        </div>
+                    </div>
+                  {% elif y == 'dataType' %}
+                  <div class="mb-3">
+                    {% with field_value=x[y],
+                      field_id="axis_var_"+var_num+"_"+y,
+                      field_label=y %}
+                      {% include 'edit/var_dataType.html' %}
+                    {% endwith %} 
+                  </div>
+                  {% else %}
+                    {% with field_value=x[y],
+                            field_id="axis_var_"+var_num+"_"+y,
+                            field_label=y,
+                            required=True,
+                            disabled=y=="sourceName" and x[y][0] != "="%}
+                        {% include 'edit/field.html' %}
+                    {% endwith %} 
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% elif el == 'dataVariable' %}
+        <h5 class="fw-bold" >Variables </h5>
+        <div class="card mb-3 bg-primary">
+          
+          <div class="card-body">
+            {% for x in data.xml['dataset'][el] %}
+            {% set var_num = loop.index|string %}
+            <div class="card mb-3" id="collapsible_{{x['@name']}}">
+           
+              <h6 class="fw-bold " data-bs-toggle="collapse" data-bs-target="#axis_card_body{{var_num}}" aria-expanded="true" aria-controls="axis_card_body{{var_num}}" >#{{var_num}} - {{x['destinationName']}}</h6>
+              <div id="axis_card_body{{var_num}}" class="card-body collapse in" >                    
+                {% for y in x %}
+                  {% if y == 'addAttributes' %}
+                    <h6 class="fw-bold">Variable attributes</h6>
+                    <div id="card_attribute" class="card mb-3 border border-2 border-primary">
+                      <div class="card-body">
+                        {% set atts = [] %}
+                          {% for z in x[y]['att'] %}
+                              {%- set _ = atts.append(z['@name']) %}
+                              {% with field_value=z['#text'],
+                                      field_id="varattr_"+var_num+z['@name'],
+                                      field_label=z['@name'],
+                                      required=z['@name'] in ['standard_name'],
+                                      disabled=z['@name'] in ['cf_role'] %}
+                                  {% include 'edit/field.html' %}
+                              {% endwith %}                       
+                          {% endfor %}
+                          
+                          {% for z in ["long_name","standard_name", "units", "_FillValue"]%}
+                            {% if z not in atts %}
+                                {% with field_id="varattr_"+var_num+z,
+                                        field_label=z,
+                                        required=z in ['standard_name'] %}
+                                    {% include 'edit/field.html' %}
+                                {% endwith %} 
+                            {% endif %}
+                          {% endfor %}
+                          
+                        </div>
+                    </div>
+                  {% elif y == 'dataType' %}
+                  <div class="mb-3">
+                    {% with field_value=x[y],
+                      field_id="var_"+var_num+"_"+y,
+                      field_label=y %}
+                      {% include 'edit/var_dataType.html' %}
+                    {% endwith %}     
+                  </div>
+                  {% else %}
+                    {% with field_value=x[y],
+                            field_id="var_"+var_num+"_"+y,
+                            field_label=y,
+                            required=True,
+                            disabled=y=="sourceName" and x[y][0] != "="%}
+                        {% include 'edit/field.html' %}
+                    {% endwith %} 
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+      {% else %}
+
+      <div class="mb-3" style="display:none;">
+        <label for="input_{{el}}" class="form-label">{{el}}</label>
+        <input type="text" class="form-control" id="input_{{el}}" value="{{data.xml['dataset'][el]}}">
+      </div>
+
+      {% endif %}
+    {% endfor %}
+  </form>
+  <form id="add_custom_field" onsubmit="event.preventDefault(); add_custom_field()"></form>

@@ -1,0 +1,45 @@
+services:
+
+  db:
+    image: postgres:latest
+    container_name: erddap-cms-db
+    environment:
+      POSTGRES_USER: erddap
+      POSTGRES_PASSWORD: erddap
+    healthcheck:
+      test: pg_isready -d erddap -U erddap
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+    volumes:
+      - pg_data:/var/lib/postgresql/data:rw
+    restart: always
+
+
+  erddap-cms:
+    build:
+      context: ./
+      target: dev
+    container_name: erddap-cms
+    ports:
+      - 8080:8080 #erddap 
+      - 5000:5000 #cms
+      - 5679:5678 #debugger
+    restart: always
+    platform: linux/amd64
+    env_file: 0-dev.env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes: 
+      - erddap_data:/erddapData:rw
+      - datasets_data:/datasets_data:rw
+      - ./tomcat_logs:/usr/local/tomcat/logs:rw
+      - ./frontend:/var/www/html/frontend
+      - ./datasets_xml:/datasets_xml_parts/active
+
+volumes:
+  pg_data:
+  erddap_data:
+  datasets_data:

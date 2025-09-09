@@ -1,0 +1,61 @@
+<div class="mb-3" id="{{field_id}}_group" >
+    {% if required or disabled %}
+    <label for="{{field_id}}" class="form-label" id="{{field_id}}_label">{{field_label}} * 
+    </label>
+    {% else %}
+    <label for="{{field_id}}" class="form-label" id="{{field_id}}_label">{{field_label}} 
+    </label>
+    <a title="Delete attribute" onclick="javascript: delete_field('{{field_id}}');" id="{{field_id}}_delete" class="text-primary">
+        <i class="fa-solid fa-trash"></i>
+    </a>
+    <a title="Add attribute" onclick="javascript: add_field('{{field_id}}');" id="{{field_id}}_add" class="text-primary d-none">
+        <i class="fa-solid fa-circle-plus"></i>
+    </a>
+    {% endif %}
+    <div class="input-group">
+    {% if field_label == "standard_name" %}
+        {% include 'edit/standard_names.html' %}
+    {% elif "institution" in field_label|lower %}
+        <select class="select-institute form-control p-0 m-0" 
+            placeholder="Select an institute..." autocomplete="off" 
+            id="{{field_id}}" 
+            name="{{field_label}}" 
+            aria-describedby="{{field_label}}_info"
+            {% if "global" not in field_id %}
+                data-varnum="{{var_num}}"
+            {% if "_attr_" in field_id %}
+                data-varattr="true"
+            {% else %}
+                data-var="true"
+            {% endif %}
+        {% endif %}
+        {% if required %} required{% endif %}
+		{% if disabled %} disabled{% endif %}
+        >
+            <option value="{{field_value}}" selected>{{field_value}}</option>
+        </select>
+    {% else %}
+        <input type="text" class="form-control" id="{{field_id}}" name="{{field_label}}"
+                value="{{field_value}}" aria-describedby="{{field_label}}_info"
+                {% if "global" not in field_id %}
+                    data-varnum="{{var_num}}"
+                    {% if "_attr_" in field_id %}
+                        data-varattr="true"
+                    {% else %}
+                        data-var="true"
+                    {% endif %}
+                {% endif %}
+                {% if field_label == "sourceName" and field_value[0] == "=" %}
+                    pattern='=".*"' title='Correct format is ="value"'
+                {% endif %}
+		{% if required %} required{% endif %}
+		{% if disabled %} disabled{% endif %}
+		>
+    {% endif %}
+    {% if "global" in field_id %}
+        <button type="button" class="input-group-text" id="{{field_id}}_info" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="right" data-bs-trigger="focus" data-bs-content="" data-bs-html="true">
+        <i class="bi bi-info-circle"></i>
+        </button>
+    {% endif %}
+    </div>
+</div>

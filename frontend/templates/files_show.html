@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="d-flex flex-column w-100">
+  <h3 class="fw-bold text-truncate py-1 mx-0">{{dataset.title}}</h3>
+  <p class="fw-light m-0"><b>Filename:</b> {{data.filename}}</p>
+  <p class="fw-light m-0"><b>Dimension:</b> {{data.filedim}} MB</p>
+</div>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script> 
+
+  <div id="describe_dataset" class="mt-5 table" style="width:100%;overflow-x: scroll;">
+  {{data.describe|safe}}
+
+</div>
+<div class="mt-5" style="height:auto;" >
+  <h6 class='text-center'>Histograms</h6>
+  {{data.plots| safe }}
+</div>
+
+{% endblock content %}

@@ -1,0 +1,79 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+  <!-- File upload Modal -->
+  <div class="modal fade" id="fileUploadModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="fileUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="fileUploadModalLabel">Upload a new file</h5>
+          <button type="button" id="btn-close-modal" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="closeModalHandler()"></button>
+        </div>
+        <div id="file-upload-alert" class="alert alert-danger fade show d-none" role="alert">
+          <span id="file-upload-alert-text"></span>
+        </div>
+        <div class="modal-body d-flex flex-column justify-content-center">
+          <input type="file" onchange="fileUploadOnChange(this)" multiple accept=".csv,.nc"/>
+          <div class="w-100 d-flex flex-column justify-content-center mt-3">
+            <div id="upload-modal-spinner" class="spinner-border align-self-center mt-2 d-none" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <div id="upload-file-progress-bar" class="d-none progress">
+              <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <p id="upload-modal-message" class="align-self-center mt-1 d-none"></p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-file-close-modal" type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="closeModalHandler()">Close</button>
+          <button id="btn-file-upload" type="button" class="btn btn-primary" onclick="uploadFile('{{ data.id }}')" disabled>Upload</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="d-flex w-100 flex-column">
+    <h3 class="fw-bold text-truncate py-1 mx-0">{{ dataset.title }}
+    </h3>
+    <p class="fw-light m-0"><b>Filename:</b> {{ dataset.filename}}</p>
+    <p class="fw-light m-0"><b>ID:</b> {{ dataset.id}}</p>
+    {% if dataset.active %}
+      <p class="fw-light m-0"><b>Active: </b><span class="badge bg-success">{{dataset.active}}</span></p>
+    {% else %}
+      <p class="fw-light m-0"><b>Active: </b><span class="badge bg-danger">{{dataset.active}}</span></p>
+    {% endif %}    
+  </div>
+  <div class="d-flex flew-row w-100 justify-content-between align-items-center my-3">
+    <h4 class="mb-0">{{ data.file_list | length }} File:</h4>
+    <button type="button" class="btn btn-primary float-end" data-bs-toggle="modal" data-bs-target="#fileUploadModal">Upload file</button>
+  </div>
+
+  <ul class="list-group"> 
+    {% for file in data.file_list %}
+      {% set href_files_show = data.url_path~'/xml/files_show?id='~dataset.id~'&filename='~file %}
+      <li class="d-flex justify-content-between align-items-center list-group-item">
+        {{ file }}
+        <div class="d-flex">
+          <a href="{{ href_files_show }}">
+            <button class="btn btn-outline-primary me-4">
+              <i class="bi bi-info"></i>
+            </button>
+          </a>
+          <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmModal"
+            data-bs-title="Confirm deletion"
+            data-bs-body="Are you sure you want to delete dataset file <strong>{{file}}</strong>?"
+            data-bs-url="/api/dataset/file/delete"
+            data-bs-json='{{({'id': dataset.id, 'filename': file})|tojson}}'
+            >
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>   
+      </li>
+    {% endfor %}
+  </ul>
+  {% include 'common/confirmModal.html' %}
+  <script src="{{ url_for('static', filename='js/files.js') }}"></script>
+
+{% endblock content %}

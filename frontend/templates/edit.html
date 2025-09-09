@@ -1,0 +1,92 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <!-- Validate modal -->
+  <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="staticBackdropLabel">Validation output <span id="validation-result" class="badge bg-success"></span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div id="validate-modal" class="modal-body">
+          <div id="spinner" class="d-flex align-items-center flex-column">
+            <div class="spinner-border mb-2" role="status"></div>
+            <strong>Validating, please wait...</strong>
+          </div>
+          <div id="modal-relevant"></div>
+          <div class="accordion" id="logsAccordion">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="full_log_header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#full_log" aria-expanded="false" aria-controls="collapseOne">
+                  Full logs
+                </button>
+              </h2>
+              <div id="full_log" class="accordion-collapse collapse" aria-labelledby="full_log_header" data-bs-parent="#logsAccordion">
+                <div id="modal-text" class="accordion-body">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick=closeValidateModal()>Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="navbar navbar-light bg-light mb-4">
+      <div class="row w-100 mx-2 mb-3">
+        <div class="d-flex col-12">
+          <h3 class="align-self-center d-inline fw-bold text-truncate">{{ data.dataset.title }}
+          </h3>
+        </div>
+      </div>
+      <div class="row w-100 mb-3 mx-0 pb-1 align-items-center">
+        <div class="col-8">
+          <p class="fw-light m-0"><i class="{% if data.dataset.active %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i> Enabled</p>
+          <p class="fw-light m-0"><i class="{% if data.dataset.validated %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i> Validated</p>
+          <p class="fw-light m-0"><i class="{% if data.dataset.published %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i> Published</p>
+        </div>
+        <div class="col-4">
+          <div class="d-flex justify-content-end mb-3">
+            <button class="btn btn-success me-2" onclick="save('{{ data.id }}')">Save</button>
+            <button class="btn btn-primary me-2" onclick="validate('{{ data.id }}')">Validate</button>
+            <span class="d-inline-block me-2" tabindex="0" {% if not data.dataset.validated %} data-bs-toggle="tooltip" data-bs-title="Dataset needs to be valid to be published or reloaded." {% endif %}>                 
+              <button class="btn btn-secondary" onclick="reload(this,'{{ data.id }}')" {% if not data.dataset.validated %} disabled {% endif %}>
+                <span id="action-button-spinner"class="spinner-border spinner-border-sm hide" role="status" aria-hidden="true"></span>
+                <span id="action-button-text" class="">{% if data.dataset.published %} Reload {% else %} Publish {% endif %}</span>
+              </button>
+            </span>
+          </div>
+          {% if data['current_user'].admin %}
+            <div class="form-check form-switch d-flex justify-content-end align-items">
+              <input class="form-check-input mx-1" type="checkbox" role="switch" id="flexSwitchCheckDefault" onchange="enableDataset(this, '{{ data.id }}')" 
+              {% if data.dataset.active %} checked {% endif %}>
+              <label class="form-check-label" for="flexSwitchCheckDefault">Enable dataset</label>
+            </div>
+          {% endif %}          
+        </div>
+      </div>
+    {% if data['current_user'].admin == true %}
+    <div class="nav nav-tabs" id="nav-tab" role="tablist">
+      <button class="nav-link active" id="nav-form-tab" data-bs-toggle="tab" data-bs-target="#nav-form" type="button" role="tab" aria-controls="nav-form" aria-selected="true">Simple</button>
+      <button class="nav-link" id="nav-xml-tab" data-bs-toggle="tab" data-bs-target="#nav-xml" type="button" role="tab" aria-controls="nav-xml" aria-selected="false">XML</button>
+    </div>
+    {% endif %}
+  </nav>
+  <div class="tab-content" id="nav-tabContent">
+    <div class="tab-pane fade show active" id="nav-form" role="tabpanel" aria-labelledby="nav-form-tab">
+      {% include 'edit/form.html' %}
+    </div>
+    {% if data['current_user'].admin == true %}
+    <div class="tab-pane fade" id="nav-xml" role="tabpanel" aria-labelledby="nav-xml-tab">
+      <textarea id="editor">{{ data.text }}</textarea>
+    </div>
+    {% endif %}
+  </div> 
+  <script> dataset = {{ data.json | safe }}; </script>
+  <script src="{{ url_for('static', filename='js/edit.js') }}"></script>
+  
+{% endblock content %}

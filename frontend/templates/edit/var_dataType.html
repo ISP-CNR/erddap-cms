@@ -1,0 +1,8 @@
+<label for="{{field_id}}" class="form-label">{{field_label}}</label>
+<select class="form-select" id="{{field_id}}" name="{{field_label}}" value="{{field_value}}" data-varnum="{{var_num}}" data-var="true">
+  <option value="int" {% if field_value == "int" %}selected{% endif %}>int</option>
+  <option value="byte" {% if field_value == "byte" %}selected{% endif %}>byte</option>
+  <option value="float"  {% if field_value == "float" %}selected{% endif %}>float</option>
+  <option value="double" {% if field_value == "double" %}selected{% endif %}>double</option>
+  <option value="String"  {% if field_value == "String" %}selected{% endif %}>String</option>
+</select>

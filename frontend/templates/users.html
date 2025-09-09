@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+  <!-- Main content -->
+
+  <div class="d-flex flex-row m-2 ">
+    <h3>Users</h3>
+  </div>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for message in messages %}
+      <div class="alert alert-info alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <ul class="list-group"> 
+    {% for user in users %}
+      <li class="d-flex justify-content-between align-items-center list-group-item">
+        <div class="d-flex flex-column p-2">
+          <p class="fw-light m-0"><b>Name:</b> {{ user.name or '' }}</p>
+          <p class="fw-light m-0"><b>Email:</b> {{ user.email or '' }}</p>
+          <p class="fw-light m-0"><b>Affiliation:</b> {{ user.affiliation or '' }}</p>
+          {% if user.admin %}
+            <p class="fw-light m-0"><b>Admin: </b><span class="badge bg-success">{{user.admin}}</span></p>
+          {% else %}
+            <p class="fw-light m-0"><b>Admin: </b><span class="badge bg-danger">{{user.admin}}</span></p>
+          {% endif %}  
+          {% if user.active %}
+            <p class="fw-light m-0"><b>Active: </b><span class="badge bg-success">{{user.active}}</span></p>
+          {% else %}
+            <p class="fw-light m-0"><b>Active: </b><span class="badge bg-danger">{{user.active}}</span></p>
+          {% endif %}
+          <p class="fw-light m-0"><b>Identities:</b>
+            <ul>{% for identity in user.identities %}
+              <li>{{identity.identifier}}@{{identity.provider}}</li>
+            {% endfor %}
+            </ul>
+          </p>
+          <p class="fw-light m-0"><b>Permissions:</b>
+            <ul>{% for permission in user.permissions %}
+              <li>{{permission.dataset_id}}</li>
+            {% endfor %}
+            </ul>
+          </p>
+        </div>
+        <div class="d-flex">
+          <a href="{{ url_for('users')}}/{{user.id}}">
+            <button class="btn btn-outline-primary me-4">
+              <i class="bi bi-pencil"></i>
+            </button>
+          </a>
+          <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmModal"
+            data-bs-title="Confirm deletion"
+            data-bs-body="Are you sure you want to delete user <strong>{{user.name}}</strong>?"
+            data-bs-url="api/users/delete"
+            data-bs-json='{{({'id': user.id})|tojson}}'
+            >
+            <i class="bi bi-trash"></i>
+          </button>
+          
+        </div>   
+      </li>
+    {% endfor %}
+  </ul>
+  {% include 'common/confirmModal.html' %}
+
+{% endblock content %}

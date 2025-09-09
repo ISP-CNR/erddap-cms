@@ -1,0 +1,258 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+  {% if current_user.active == false %}
+  <div class="container d-flex justify-content-center flex-column">
+    <img class="align-self-center w-50" src="{{ url_for('static', filename='img/unauthorized.jpg') }}">
+    <h5 class="align-self-center mt-3 p-3">Your account needs to be activated by admins. Please wait for the activation and try login again.</h5>
+  </div>
+  {% else %}
+
+  {% include 'common/messageModal.html' %}
+
+  <!-- dataset from modal -->
+  <div class="modal fade" id="datasetFromModal" aria-hidden="true" aria-labelledby="datasetFromModalLabel" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="datasetFromModalLabel">Choose an option</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body d-flex justify-content-center">
+          <button class="btn btn-primary mx-1" data-bs-target="#addNewDatasetModalfromfile" data-bs-toggle="modal">From existent File</button>
+          <button class="btn btn-primary mx-1" data-bs-target="#addNewDatasetModalfromERDDAP" data-bs-toggle="modal">From another ERDDAP</button>          
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- New dataset from file modal -->
+  <div class="modal fade" id="addNewDatasetModalfromfile" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addNewDatasetModalfromfile" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" >
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addNewDatasetModalfromfile">Add new dataset</h5>
+          <button type="button" id="btn-close-modal" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="closeModalHandler()"></button>
+        </div>
+
+          <div class="modal-body">
+            <div id="file-upload-alert" class="alert alert-danger d-none" role="alert">
+              <span id="file-upload-alert-text"></span>
+            </div>
+
+            <form id="addNewDatasetfromfileForm">
+              <label class="mt-2" for="typesdataset">File<small> (only .csv and .nc allowed) </small><i data-bs-toggle="tooltip" data-bs-title="Datasets are made by one or more files as Comma-Separated Values (.csv) or NetCDF-3 (.nc) formats. Start by uploading a file. Later you can add more files to the dataset." class="bi bi-info-circle"></i><br></label>
+              <p><small>Correct date format: yyyy-MM-dd'T'HH:mm:ss'Z'</small></p>
+              <input type="file" class="form-control mt-2" name="file" id="file" accept=".nc,.csv" onchange="checkNewDatasetfromFile()" required/>
+              <div id="loading-block" class="d-none align-self-center">
+                <div class="d-flex flex-column justify-content-center">
+                  <div class="spinner-border align-self-center mt-2" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <p class="mt-1"></p>
+                </div>
+              </div>
+              <p style="margin-top: 10px;">
+                <span title="Download a ISO-8859-1 comma-separated text table (line 1: names; line 2: units; ISO 8601 times)" class="badge bg-info"><a class="link-light" href="https://coastwatch.pfeg.noaa.gov/erddap/tabledap/pmelTaoDySst.csv?longitude,latitude,time,station,wmo_platform_code,T_25&time%3E=2015-05-23T12:00:00Z&time%3C=2015-05-31T12:00:00Z ">CSV file example</a></span>
+                <span title="Download a flat, table-like, NetCDF-3 binary file with COARDS/CF/ACDD metadata" class="badge bg-info ml-2"><a class="link-light" href="https://data.iadc.cnr.it/erddap/files/salzano_snow_height_gruvebadet/SCD2.8-GSRS-CNR-2023.nc">NC file example</a></span>
+              </p>
+              <div id="loading-block" class="d-none align-self-center">
+                <div class="d-flex flex-column justify-content-center">
+                  <div class="spinner-border align-self-center mt-2" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <p class="align-self-center mt-1"></p>
+                </div>
+              </div>
+              <hr class="mt-1">
+              <label class="mt-2" for="typesdataset">Dataset type</label>
+              <i data-bs-toggle="tooltip" data-bs-title="Hover the mouse on a selection to see its description" class="bi bi-info-circle"></i>
+              <br>
+              <select class="form-control mt-2" aria-label="Default select data type" name="cdm_data_type" id="cdm_data_type">
+                <option value="TimeSeries"  title="TimeSeries is a sequence of measurements (e.g., sea water temperature) taken at one, fixed, latitude, longitude, depth (or altitude) location." selected>Time Series</option>                
+                <option value="TimeSeriesProfile" title="TimeSeriesProfile is for a sequence of profiles taken at one, fixed, latitude longitude location. Each profile is a set of measurements taken at multiple altitudes or depths. ">Time Series Profile</option>
+                <option id="grid_option" value="Grid" title="Grid">Grid</option>
+                <option value="Other" title="Other has no requirements. Use it if the dataset doesn't fit one of the other options, notably, if the dataset doesn't include latitude, longitude and time variables">Other</option>
+              </select>
+              <!--<label class="mt-2" for="datasetNameInput">Dataset id</label>
+              <input type="text" class="form-control mt-2" name="datasetNameInput" id="datasetNameInput" placeholder="Your dataset id..." pattern="[A-Za-z0-9_]+" required>-->
+              <div id="title_summary" style="display: none;">
+              <label class="mt-2" for="typesdataset">Title</label>
+              <input id="title_form" type="text" class="form-control mt-2" name="title" placeholder="Your dataset title..." required>
+              <label class="mt-2" for="typesdataset">Summary</label>
+              <textarea id="summary_form" class="form-control mt-2" name="summary" placeholder="Your dataset summary..." required></textarea>
+              </div>
+              
+              <label class="mt-2" for="typesdataset">Creator email</label>
+              <input type="email" class="form-control mt-2" name="creator_email" value="{{current_user.email or '' }}" required>
+              <label class="mt-2" for="typesdataset">Info Url</label>
+              <i data-bs-toggle="tooltip" data-bs-title="Web page with more information about this dataset or the institution's website." class="bi bi-info-circle"></i>
+              <input type="url" class="form-control mt-2" name="infoUrl" value="https://" required>
+              <label class="mt-2" for="typesdataset">Institution</label>
+
+              <select class="select-institute h-75" placeholder="Select an institute..." autocomplete="off" id="institution"  name="institution"></select>
+                
+              <div id="latitude" style="display: none;">
+                <label class="mt-2" for="latitude">Latitude</label>
+                <br><i>It appears that the file doesn't contains a valid latitude, please manually provide it</i> <br>
+                <input type="number" class="form-control mt-2" name="latitude" placeholder="Your dataset latitude..." step=any  min="-90" max="90" disabled="disabled" required>
+              </div>
+              <div id="longitude" style="display: none;">
+                <label class="mt-2" for="longitude">Longitude</label>
+                <br><i>It appears that the file doesn't contains a valid longitude, please manually provide it</i> <br>
+                <input type="number" class="form-control mt-2" name="longitude" placeholder="Your dataset longitude..."  min="-180" max="180" step=any disabled="disabled" required>
+              </div>
+            </form>  
+          </div>
+          <div class="modal-footer">
+            <div class="progress" style="width: 100%; display: none;">
+              <div id="progressbar-add-new-datasetfromfile" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <button id="btn-file-close-modal" type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="closeModalHandler()">Close</button>
+            <button id="btn-add-new-datasetfromfile" class="btn btn-primary" onclick="addNewDatasetfromFile()">Ok</button>
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- dataset from ERDDAP Modal -->
+  <div class="modal fade" id="addNewDatasetModalfromERDDAP" tabindex="-1" aria-labelledby="addNewDatasetModalfromERDDAPLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="addNewDatasetModalfromERDDAPLabel">Add new dataset from ERDDAP</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form class="form-floating">
+            <input type="url" class="form-control" id="erddap-url" placeholder="Insert the ERDDAP url..." oninput="validateURL(this)">
+            <label for="erddap-url">Dataset ERDDAP url</label>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button id="btn-add-dataset-from-erddap" type="button" class="btn btn-primary" onclick="addNewDatasetFromERDDAP()" disabled>Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+  <div class="container-fluid">
+      <div class="d-flex justify-content-between mt-2 mb-3">
+        <h4 class="flex-grow-1">Current active datasets:</h4>
+        {% if current_user.active == true %}
+        <button type="button" class="btn btn-warning ms-1" data-bs-toggle="modal" data-bs-target="#datasetFromModal">Add new dataset</button>
+        {% endif%}
+      </div>
+    </div>
+    
+    
+    <table id="datasets_table" class="display stripe compact"  style="width:100%" >
+      <thead class="text-center">
+        <tr class="tr-class-1 text-center">
+          
+         
+          <th  data-field="users" data-valign="middle"></th>        
+          <th data-field="name" data-valign="middle" data-sortable="true">Dataset Name</th>
+          <th   data-field="status"  data-custom-attribute="status">Status</th>
+
+          <!--
+          <th data-width="115"  data-field="enabled"   data-custom-attribute="enabled" data-sortable="true">Enabled</th>
+          <th data-width="115"  data-field="validated" data-custom-attribute="validated" data-sortable="true">Valid</th>
+          <th data-width="115"  data-field="published" data-custom-attribute="published" data-sortable="true">Published</th>
+          -->
+          <th  data-field="description" class="text-center">Summary</th>
+          <th   data-field="uploaded" data-sortable="true">Uploaded at (UTC)</th>
+          <th   data-field="modify" data-sortable="true">Last modify (UTC)</th>
+          <th data-field="actions" class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dataset in data.datasets %}
+        {% set href_config = data.url_path~'/xml/edit?id='~dataset.id %}
+        {% set href_files = data.url_path~'/xml/files?id='~dataset.id %}
+        <tr  id="tr-id-{{dataset.id}}" data-object='{"key": "value"}'>
+          
+          {% if current_user.is_admin() %}
+
+          <td class="text-center"><i class="bi bi-people-fill" data-bs-toggle="tooltip" data-bs-title="{{dataset.users | join(',') | default('No users', True)}}"></i></td>
+           
+         
+          {% else %}
+          <!--to do-->
+          <td class="text-center"><i class="bi bi-people-fill" data-bs-toggle="tooltip" data-bs-title="{{dataset.users | join(',') | default('No users', True)}}"></i></td>
+
+          {% endif%}
+
+          <td id="td-id-{{dataset.id}}"  style="max-width: 10px;" dataset_id="{{dataset.title}}" data-bs-toggle="tooltip" data-bs-title="{{dataset.title | default('No title', True)}}" data-placement="top">
+          
+              {% if dataset.active %}<a href="{{dataset.link}}">{% endif %}{{dataset.title|default("Undefined", true)}}{% if dataset.active %}</a>{% endif %}
+          </td>
+
+          
+
+          <td class="text-center">
+            <div style="display: flex; justify-content: space-evenly; align-items: center;">
+              <i data-bs-toggle="tooltip" data-bs-title="Enabled?" class="{% if dataset.active %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i>
+              <i data-bs-toggle="tooltip" data-bs-title="Valid?" class="{% if dataset.validated %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i>
+              <i data-bs-toggle="tooltip" data-bs-title="Published?" class="{% if dataset.published %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i>
+            </div>
+          </td>
+          <!--
+          <td style="text-align:center;"><i class="{% if dataset.active %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i></td>
+          <td style="text-align:center;"><i class="{% if dataset.validated %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i></td>
+          <td style="text-align:center;"><i class="{% if dataset.published %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i></td>
+          -->
+          <td data-i18n="Description" data-bs-toggle="tooltip" data-bs-title="{{dataset.summary | default('No summary', True)}}">
+            {{dataset.summary}}
+          </td>
+          <td data-text="created_at" class="text-center">{{dataset.created_at}}</td>
+          <td data-text="last_modify" class="text-center">{{dataset.last_modify}}</td>
+          <td  class="text-center" >
+            <div  data-valign="middle">
+              <a title="Dataset configuration" class="btn btn-primary me-1" href="{{ href_config }}" style="width: 42px;"><i class="bi bi-gear-fill text-white"></i></a>
+              
+              {% if dataset.files_dir %}
+                <a title="Manage dataset files" class="btn btn-secondary me-1" href="{{ href_files }}" style="width: 42px;"><i class="bi bi-file-earmark"></i></a>
+              {% else %}
+                <a title="Manage dataset files" class="btn btn-secondary me-1 disabled" href="#" style="width: 42px;"><i class="bi bi-file-earmark disabled"></i></a>
+              {% endif %}
+
+              {% if current_user.active == true %}
+                
+                <span class="d-inline-block me-1" tabindex="0" {% if not dataset.published %} data-bs-toggle="tooltip" data-bs-title="Dataset needs to be published to download ISO metadata." {% endif %}  style="max-width: 42px;">                  
+                  <button type="button" title="Download iso metadata" class="btn btn-info" onclick="downloadISOMetadata(this)" style="max-width: 42px;"
+                    data-bs-dataset-filename = "{{ dataset.filename }}" {% if not dataset.published %} disabled {% endif %}>
+                    <i class="bi bi-code-slash text-white"></i>
+                  </button>
+                </span>
+            
+                <button title="Delete dataset" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmModal" style="width: 42px;"
+                  data-bs-title="Confirm deletion"
+                  data-bs-body="Are you sure you want to delete dataset <strong>{{dataset.title}}</strong>?<br> 
+                  This operation will also deleted all dataset files."
+                  data-bs-url="api/dataset/delete"
+                  data-bs-json='{{({'id': dataset.id})|tojson}}'>
+                  <i class="bi bi-trash3"></i>
+                </button>
+        
+              {% endif %}               
+            </div>
+          </td>
+        </tr>
+      {% endfor %}    
+      </tbody>
+    </table>
+
+    </div>
+    
+    
+    
+  </div>
+  {% include 'common/confirmModal.html' %}
+  <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+
+{% endif %}
+{% endblock content %}

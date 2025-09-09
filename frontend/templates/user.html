@@ -1,0 +1,117 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+  <!-- Main content -->
+
+  <div class="d-flex flex-row w-100">
+    <h3>User: {{user.name}}</h3>
+    
+  </div>
+
+  <div>
+    <p class="fw-light"><b>Identity Provider:</b>
+      {% for identity in user.identities %}
+        <span>{{identity.provider}}</span>
+      {% endfor %}
+   
+    </p>
+  </div>
+  {% with messages = get_flashed_messages(with_categories=True) %}
+  {% if messages %}
+    {%- for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor -%}
+  {% endif %}
+{% endwith %}
+
+  <form id="ediUserForm" method="POST">
+    {% if (user.identities | selectattr('provider', 'equalto', 'local') | list) %}
+    <div class="mb-3">
+      <label for="name" class="form-label">Name</label>
+      <input type="string" class="form-control" id="name" name="name" required="required" value="{{user.name or ''}}">
+    </div>
+    {%else%}
+    <div class="mb-3">
+      <label for="name" class="form-label">Name</label>
+      <input style="background-color: #d3d3d3 !important;" style="background-color: #d3d3d3 !important;" type="string" class="form-control" id="name" name="name" required="required" value="{{user.name or ''}}" disabled>
+    </div>
+    {% endif %}
+
+    {% if (user.identities | selectattr('provider', 'equalto', 'orcid') | list) %}
+    <div class="mb-3">
+      <label for="email" class="form-label">Email</label>
+      <input type="email" class="form-control" id="email" name="email" required="required" value="{{user.email or ''}}">
+    </div>
+    {%else%}
+    <div class="mb-3">
+      <label for="email" class="form-label">Email</label>
+      <input style="background-color: #d3d3d3 !important;" type="email" class="form-control" id="email" name="email" required="required" value="{{user.email or ''}}" disabled>
+    </div>
+    {% endif %}
+
+    {% if (user.identities | selectattr('provider', 'equalto', 'cnr') | list) %}
+    <div class="mb-3">
+      <label for="affiliation" class="form-label">Affiliation</label>
+      <!--<input style="background-color: #d3d3d3 !important;" type="string" class="form-control" id="affiliation" name="affiliation" value="{{user.affiliation or ''}}" disabled>-->
+      <select class="select-institute h-75" placeholder="Select an institute..." autocomplete="off" id="affiliation" name="affiliation">
+        <option value="{{user.affiliation or ''}}" selected>{{user.affiliation or ''}}</option>
+      </select>
+    </div>
+    {%else%}
+    <div class="mb-3">
+      <label for="affiliation" class="form-label">Affiliation</label>
+      <!--<input type="string" class="form-control" id="affiliation" name="affiliation" value="{{user.affiliation or ''}}"    >-->
+      <select class="select-institute h-75" placeholder="Select an institute..." autocomplete="off" id="affiliation" name="affiliation">
+        <option value="{{user.affiliation or ''}}" selected>{{user.affiliation or ''}}</option>
+      </select>
+    </div>
+    {% endif %}
+
+    {% if (user.identities | selectattr('provider', 'equalto', 'local') | list) %}
+    <div class="mb-3">
+      <label for="password" class="form-label">Password reset</label>
+      <input type="password" class="form-control" id="password" name="password" value="{{user.password or ''}}" placeholder="Type here the new password" minlength="6">
+    </div>
+    {% endif %}
+
+    <hr class="mt-1">
+    {% if current_user.is_admin() %}
+
+    <div class="btn-group" role="group" aria-label="Basic checkbox toggle button group">
+      <input type="checkbox" class="btn-check" id="admin" name="admin" {{"checked" if user.admin else""}} value="on">
+      <label class="btn btn-outline-primary" for="admin">Admin</label>
+    
+      <input type="checkbox" class="btn-check" id="active" name="active" {{"checked" if user.active else""}} value="on">
+      <label class="btn btn-outline-success" for="active">Active</label>
+
+    </div>
+
+
+      {% if not user.is_admin() %}
+      <div class="mb-1">
+        Datasets:<br>
+              
+         <div class="list-group">
+        {%- for dataset in datasets %}
+        <label class="list-group-item" for="datasets[{{dataset.id}}]">
+          <input type="checkbox" class="form-check-input me-1" id="datasets[{{dataset.id}}]" name="datasets[]" value="{{dataset.id}}" {{"checked" if dataset.is_readable(user) else""}}>
+
+          {{dataset.title}}
+        </label>
+        {% endfor -%}
+        </div>
+      </div>
+     
+      
+      {% endif %}
+    {% endif %}
+    <div class="mt-3">
+    <button type="submit" class="btn btn-primary">Save</button>
+  </div>
+  </form>
+       
+{% endblock %}
