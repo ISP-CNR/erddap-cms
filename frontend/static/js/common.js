@@ -8,6 +8,7 @@ $(document).ready(() => {
       labelField: 'name', // the key of the JSON response to take as label
       maxItems: 1,
       searchField: [],
+      create: true,
       load: function(query, callback) {
         if (!query.length) return callback();
         this.clearOptions();
