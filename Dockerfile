@@ -1,4 +1,5 @@
-FROM axiom/docker-erddap:2.24-jdk21-openjdk AS base
+ARG ERDDAP_BASE_IMAGE=erddap/erddap:v2.28.1
+FROM $ERDDAP_BASE_IMAGE AS base
 
 LABEL organization="ISP-CNR" \
       developers="Giulio Verazzo, Alice Cavaliere" \
@@ -18,9 +19,9 @@ RUN bash /datasets_xml_parts/compile_datasets_xml.sh
 
 FROM base AS dev
 
-  COPY my_entrypoint.sh /
-  RUN ["chmod", "+x", "/my_entrypoint.sh"]
-  ENTRYPOINT ["/my_entrypoint.sh"]
-  EXPOSE 8080 5000 5678
+COPY my_entrypoint.sh /
+RUN ["chmod", "+x", "/my_entrypoint.sh"]
+ENTRYPOINT ["/my_entrypoint.sh"]
+EXPOSE 8080 5000 5678
 
-  CMD ["catalina.sh", "run"]
+CMD ["catalina.sh", "run"]
