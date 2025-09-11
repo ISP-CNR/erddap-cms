@@ -29,6 +29,14 @@ The default credentials for the admin user in the CMS are:
 - username: `admin`
 - password: `admin`
 
+To specify a specific ERDDAP Docker base image, run `docker compose build`
+with an `ERDDAP_BASE_IMAGE` build-arg before starting the compose stack.
+
+```
+docker compose build --build-arg ERDDAP_BASE_IMAGE=erddap/erddap:v2.28.1
+docker compose up -d
+```
+
 ## Miscellaneous
 
 Datasets configuration files and data are not tracked by git.
