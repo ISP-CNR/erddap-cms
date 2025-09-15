@@ -1,2 +1,3 @@
 tomcat_logs
 datasets_xml
+**/__pycache__/
