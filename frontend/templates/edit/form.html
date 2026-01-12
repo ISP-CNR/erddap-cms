@@ -13,7 +13,7 @@
       <option id="{{key}}" value="{{key}}" data-name="{{value['canonical_units']}}">{{key}}</option>
       {% endfor %}
     </datalist>
-    {% set global_required=["institution","title","summary","history","Conventions","infoUrl","license","creator_name","creator_email","contributor_name","contributor_email","contributor_institution","cdm_data_type","cdm_timeseries_variables",'standard_name_vocabulary', 'license'] %}
+    {% set global_required=["institution","title","summary","history","Conventions","infoUrl","license","creator_name","creator_email","contributor_name","contributor_email","contributor_institution","cdm_data_type",'standard_name_vocabulary', 'license'] %}
     {% set atts = [] %}
     {% for el in data.xml['dataset'] %}
       {% if el == 'sourceUrl' %}   
