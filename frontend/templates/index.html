@@ -43,7 +43,7 @@
 
             <form id="addNewDatasetfromfileForm">
               <label class="mt-2" for="typesdataset">File<small> (only .csv and .nc allowed) </small><i data-bs-toggle="tooltip" data-bs-title="Datasets are made by one or more files as Comma-Separated Values (.csv) or NetCDF-3 (.nc) formats. Start by uploading a file. Later you can add more files to the dataset." class="bi bi-info-circle"></i><br></label>
-              <p><small>Correct date format: yyyy-MM-dd'T'HH:mm:ss'Z'</small></p>
+              <p><small>Correct date format: yyyy-MM-ddTHH:mm:ssZ</small></p>
               <input type="file" class="form-control mt-2" name="file" id="file" accept=".nc,.csv" onchange="checkNewDatasetfromFile()" required/>
               <div id="loading-block" class="d-none align-self-center">
                 <div class="d-flex flex-column justify-content-center">
@@ -186,7 +186,9 @@
 
           {% endif%}
 
+
           <td id="td-id-{{dataset.id}}"  style="max-width: 10px;" dataset_id="{{dataset.title}}" data-bs-toggle="tooltip" data-bs-title="{{dataset.title | default('No title', True)}}" data-placement="top">
+
           
               {% if dataset.active %}<a href="{{dataset.link}}">{% endif %}{{dataset.title|default("Undefined", true)}}{% if dataset.active %}</a>{% endif %}
           </td>
@@ -206,6 +208,7 @@
           <td style="text-align:center;"><i class="{% if dataset.published %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i></td>
           -->
           <td data-i18n="Description" data-bs-toggle="tooltip" data-bs-title="{{dataset.summary | default('No summary', True)}}">
+
             {{dataset.summary}}
           </td>
           <td data-text="created_at" class="text-center">{{dataset.created_at}}</td>
