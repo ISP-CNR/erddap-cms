@@ -11,6 +11,7 @@ ERDDAP-CMS is web-app that aims to simplify the usage and management of ERDDAP d
   - ORCID, GitHub, OAuth login (Contact us for more info about this)
   - ISO 19139 (gmd prefix) metadata export fully compatibile with GeoNetwork Opensource
   - Management of user permissions on dataset
+  - The list of institutions is sourced from the Research Organization Registry (ROR).
 
 Complete documentation is under development.
 
