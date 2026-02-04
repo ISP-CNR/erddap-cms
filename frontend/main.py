@@ -29,7 +29,7 @@ app.config.update(
 )
 
 app.config['MAX_CONTENT_LENGTH'] = 2048 * 1024 * 1024
-app.config['UPLOAD_EXTENSIONS'] = ['.csv', '.nc']
+app.config['UPLOAD_EXTENSIONS'] = ['.csv', '.nc', '.h5']
 
 @app.errorhandler(413)
 def request_entity_too_large(error):
