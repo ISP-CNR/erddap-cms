@@ -22,13 +22,13 @@ function selectCDM(obj) {
 
 async function isFileValid(file) {
 
-  const allowedMimeTypes = ["text/csv", "application/x-netcdf", "application/vnd.ms-excel" ];
+  const allowedMimeTypes = ["text/csv", "application/x-netcdf", "application/vnd.ms-excel", "application/x-hdf5" ];
 
   // check file type is csv or netcdf
   let mimeType = await getMimeType(file);
 
   if (!allowedMimeTypes.includes(mimeType)) {
-    return { file: file, isValid: false, message: "Only csv and netcdf files are allowed."};
+    return { file: file, isValid: false, message: "Only csv, netcdf and h5 files are allowed."};
   }
 
   // check file size is under 2 GB
@@ -40,34 +40,33 @@ async function isFileValid(file) {
 }
 
 function getMimeType(file) {
-
-  return new Promise ((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const fileReader = new FileReader();
 
     fileReader.onloadend = function (event) {
       let mimeType = '';
-  
-      const arr = new Uint8Array(event.target.result).subarray(
-        0,
-        4,
-      );
+
+      const arr = new Uint8Array(event.target.result).subarray(0, 8);
       let header = '';
-  
-      for (let index = 0; index < arr.length; index++) {
-        header += arr[index].toString(16);
+
+      for (let i = 0; i < arr.length; i++) {
+        header += arr[i].toString(16).padStart(2, '0');
       }
-   
+
       switch (header) {
-        case '4344461': {
+        case '43444601': // NetCDF (CDF)
           mimeType = 'application/x-netcdf';
           break;
-        }
-        default: {
+
+        case '894844460d0a1a0a': // HDF5
+          mimeType = 'application/x-hdf5';
+          break;
+
+        default:
           mimeType = file.type;
           break;
-        }
       }
-  
+
       resolve(mimeType);
     };
 

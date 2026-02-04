@@ -104,7 +104,7 @@ if(file.files.length){
       }
       document.getElementById("grid_option").disabled = true; 
     }
-    if (mimeType == "application/x-netcdf"){
+    if (mimeType == "application/x-netcdf" || mimeType == "application/x-hdf5"){
 
       title_summary.style.display = 'none';
       title_form.removeAttribute('required');
