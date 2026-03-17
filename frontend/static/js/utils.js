@@ -40,31 +40,27 @@ async function isFileValid(file) {
 }
 
 function getMimeType(file) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const fileReader = new FileReader();
 
     fileReader.onloadend = function (event) {
-      let mimeType = '';
-
       const arr = new Uint8Array(event.target.result).subarray(0, 8);
-      let header = '';
+      let header = "";
 
+      // Convert buffer to hex string
       for (let i = 0; i < arr.length; i++) {
         header += arr[i].toString(16).padStart(2, '0');
       }
 
-      switch (header) {
-        case '43444601': // NetCDF (CDF)
-          mimeType = 'application/x-netcdf';
-          break;
+      let mimeType = file.type; // Default fallback
 
-        case '894844460d0a1a0a': // HDF5
-          mimeType = 'application/x-hdf5';
-          break;
-
-        default:
-          mimeType = file.type;
-          break;
+      // 1. Check for 8-byte signature (16 hex characters)
+      if (header === "894844460d0a1a0a") {
+        mimeType = "application/x-hdf5";
+      } 
+      // 2. Check for 4-byte signature (first 8 hex characters)
+      else if (header.startsWith("43444601")) {
+        mimeType = "application/x-netcdf";
       }
 
       resolve(mimeType);
