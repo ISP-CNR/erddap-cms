@@ -22,11 +22,13 @@ $(document).ready(() => {
               callback([]);
           });
   
-        var url =  `https://api.ror.org/v1/organizations?query.advanced=` + encodeURIComponent(query);
+        var url =  `https://api.ror.org/v2/organizations?query.advanced=` + encodeURIComponent(query);
         fetch(url)
             .then(response => response.json())
             .then(json => {
-              callback(json.items);
+               callback(json.items.map(x => ({ 
+                   name: x.names.find(n => n.types.includes('ror_display'))?.value
+               })));
           })
           .catch(() => {
               callback([]);
