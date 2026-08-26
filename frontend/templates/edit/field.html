@@ -1,6 +1,15 @@
 <div class="mb-3" id="{{field_id}}_group" >
     {% if required or disabled %}
     <label for="{{field_id}}" class="form-label" id="{{field_id}}_label">{{field_label}} * 
+        {% if field_label == "contributor_name" %}
+            <small class="fw-bold text-muted">(If you add multiple contributors, separate their names with ";")</small>
+            {% endif %}
+            {% if field_label == "contributor_email" %}
+            <small class="fw-bold text-muted">(If you add multiple contributors, enter each email address separated by ";")</small>
+        {% endif %}
+        {% if field_label == "contributor_institution" %}
+            <small class="fw-bold text-muted">(select the institute for each contributor)</small>
+        {% endif %}
     </label>
     {% else %}
     <label for="{{field_id}}" class="form-label" id="{{field_id}}_label">{{field_label}} 
@@ -28,11 +37,16 @@
             {% else %}
                 data-var="true"
             {% endif %}
-        {% endif %}
-        {% if required %} required{% endif %}
-		{% if disabled %} disabled{% endif %}
-        >
-            <option value="{{field_value}}" selected>{{field_value}}</option>
+            {% endif %}
+            {% if required %} required{% endif %}
+            {% if disabled %} disabled{% endif %}
+            {% if field_label|lower == "contributor_institution" %}
+                multiple
+            {% endif %}
+            >
+            {% for value in field_value.split(';') %}
+                <option value="{{ value }}" selected>{{ value }}</option>
+            {% endfor %}
         </select>
     {% else %}
         <input type="text" class="form-control" id="{{field_id}}" name="{{field_label}}"

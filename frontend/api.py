@@ -331,10 +331,46 @@ def dataset_generate_iso19139():
   iso_metadata.PIfullname(get_dataset_attribute_from_ERDDAP(dataset.id, 'creator_name'))
   iso_metadata.PIemail(get_dataset_attribute_from_ERDDAP(dataset.id, 'creator_email'))
   iso_metadata.PIorganisation(get_dataset_attribute_from_ERDDAP(dataset.id, 'institution'))
+  
+  
+  
+  
+  names = [
+    name.strip()
+    for name in get_dataset_attribute_from_ERDDAP(
+        dataset.id, 'contributor_name'
+    ).split(";")
+  ]
 
-  iso_metadata.PoCfullname(get_dataset_attribute_from_ERDDAP(dataset.id, 'contributor_name'))
-  iso_metadata.PoCemail(get_dataset_attribute_from_ERDDAP(dataset.id, 'contributor_email'))
-  iso_metadata.PoCorganisation(get_dataset_attribute_from_ERDDAP(dataset.id, 'contributor_institution'))
+  emails = [
+    email.strip()
+    for email in get_dataset_attribute_from_ERDDAP(
+        dataset.id, 'contributor_email'
+    ).split(";")
+  ]
+
+  institutions = [
+    institution.strip()
+    for institution in get_dataset_attribute_from_ERDDAP(
+      dataset.id, "contributor_institution"
+    ).split(";")
+  ]
+  
+
+  app.logger.info("contributor_institution:", repr(institutions))
+
+  for i, name in enumerate(names):
+    app.logger.info(
+        "Name: %s, Email: %s",
+        name,
+        emails[i] if i < len(emails) else ""
+    )
+
+    iso_metadata.addPoC(
+        name,
+        emails[i] if i < len(emails) else "",
+        institutions[i] if i < len(institutions) else ""
+    )
 
   iso_metadata.add_link(iso_metadata.link, Protocol.webaddress.value, "Landing page", "Metadata landing page")
   iso_metadata.add_link(dataset.link, Protocol.opendap.value, "OPeNDAP URL", "Link to OPeNDAP URL")

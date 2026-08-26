@@ -1,6 +1,7 @@
 import xmltodict
 import uuid
 import datetime
+from main import app
 from pathlib import Path
 import os
 
@@ -15,6 +16,7 @@ class ISO19139:
   def __init__(self):
     iso8601timestamp = datetime.datetime.now().replace(microsecond=0).isoformat()
     self.id = str(uuid.uuid4())
+    self._first_poc_used = False
     self.geonetwork_url = os.environ['GEONETWORK_URL']
     self.link = f"{self.geonetwork_url}/srv/api/records/{self.id}"
     with open(filepath, 'r') as f:
@@ -58,14 +60,75 @@ class ISO19139:
   def PIemail(self, value):
     self.mydict["gmd:MD_Metadata"]["gmd:identificationInfo"]["gmd:MD_DataIdentification"]["gmd:pointOfContact"][0]["gmd:CI_ResponsibleParty"]["gmd:contactInfo"]["gmd:CI_Contact"]["gmd:address"]["gmd:CI_Address"]["gmd:electronicMailAddress"]["gco:CharacterString"] = value
 
-  def PoCfullname(self, value):
-    self.mydict["gmd:MD_Metadata"]["gmd:identificationInfo"]["gmd:MD_DataIdentification"]["gmd:pointOfContact"][1]["gmd:CI_ResponsibleParty"]["gmd:individualName"]["gco:CharacterString"] = value
+  def addPoC(self, name, email, organisation):
 
-  def PoCorganisation(self, value):
-    self.mydict["gmd:MD_Metadata"]["gmd:identificationInfo"]["gmd:MD_DataIdentification"]["gmd:pointOfContact"][1]["gmd:CI_ResponsibleParty"]["gmd:organisationName"]["gco:CharacterString"] = value
+    data_identification = (
+        self.mydict["gmd:MD_Metadata"]
+        ["gmd:identificationInfo"]
+        ["gmd:MD_DataIdentification"]
+    )
 
-  def PoCemail(self, value):
-    self.mydict["gmd:MD_Metadata"]["gmd:identificationInfo"]["gmd:MD_DataIdentification"]["gmd:pointOfContact"][1]["gmd:CI_ResponsibleParty"]["gmd:contactInfo"]["gmd:CI_Contact"]["gmd:address"]["gmd:CI_Address"]["gmd:electronicMailAddress"]["gco:CharacterString"] = value
+    point_of_contacts = data_identification["gmd:pointOfContact"]
+
+    # First contributor:
+    # Use the empty pointOfContact already present in the XML template.
+    if not self._first_poc_used:
+
+        poc = point_of_contacts[1]["gmd:CI_ResponsibleParty"]
+
+        poc["gmd:individualName"]["gco:CharacterString"] = name
+
+        poc["gmd:organisationName"]["gco:CharacterString"] = organisation
+
+        poc["gmd:contactInfo"]["gmd:CI_Contact"]["gmd:address"]["gmd:CI_Address"]["gmd:electronicMailAddress"]["gco:CharacterString"] = email
+
+        self._first_poc_used = True
+
+        return
+
+    # All following contributors:
+    # Create a new pointOfContact.
+    point_of_contacts.append(
+        {
+            "gmd:CI_ResponsibleParty": {
+                "gmd:individualName": {
+                    "gco:CharacterString": name
+                },
+
+                "gmd:organisationName": {
+                    "gco:CharacterString": organisation
+                },
+
+                "gmd:contactInfo": {
+                    "gmd:CI_Contact": {
+                        "gmd:address": {
+                            "gmd:CI_Address": {
+                                "gmd:electronicMailAddress": {
+                                    "gco:CharacterString": email
+                                }
+                            }
+                        }
+                    }
+                },
+
+                "gmd:role": {
+                    "gmd:CI_RoleCode": {
+                        "@codeList": "http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#CI_RoleCode",
+                        "@codeListValue": "pointOfContact"
+                    }
+                }
+            }
+        }
+    )
+ 
+  #def PoCfullname(self, value, index):
+  #  self.mydict["gmd:MD_Metadata"]["gmd:identificationInfo"]["gmd:MD_DataIdentification"]["gmd:pointOfContact"][1]["gmd:CI_ResponsibleParty"]["gmd:individualName"]["gco:CharacterString"] = value
+
+  #def PoCorganisation(self, value, index):
+  #  self.mydict["gmd:MD_Metadata"]["gmd:identificationInfo"]["gmd:MD_DataIdentification"]["gmd:pointOfContact"][1]["gmd:CI_ResponsibleParty"]["gmd:organisationName"]["gco:CharacterString"] = value
+
+  #def PoCemail(self, value, index):
+  #  self.mydict["gmd:MD_Metadata"]["gmd:identificationInfo"]["gmd:MD_DataIdentification"]["gmd:pointOfContact"][1]["gmd:CI_ResponsibleParty"]["gmd:contactInfo"]["gmd:CI_Contact"]["gmd:address"]["gmd:CI_Address"]["gmd:electronicMailAddress"]["gco:CharacterString"] = value
 
   def west_bound_longitude(self, value):
     self.mydict["gmd:MD_Metadata"]["gmd:identificationInfo"]["gmd:MD_DataIdentification"]["gmd:extent"]["gmd:EX_Extent"]["gmd:geographicElement"]["gmd:EX_GeographicBoundingBox"]["gmd:westBoundLongitude"]["gco:Decimal"] = value

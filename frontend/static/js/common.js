@@ -2,11 +2,11 @@
 
 $(document).ready(() => {
   $('.select-institute').each(function(index){
-
+    const maxItems = $(this).is('[multiple]') ? null : 1
     new TomSelect($(this), {
       valueField: 'name', // the key of JSON response to take as value
       labelField: 'name', // the key of the JSON response to take as label
-      maxItems: 1,
+      maxItems: maxItems,
       searchField: [],
       load: function(query, callback) {
         if (!query.length) return callback();

@@ -17,3 +17,7 @@ label[for=dt-length-0]
 {
     margin-left:5px;
 }
+
+.ts-wrapper.invalid {
+  border-color: #dc3545 !important;
+}
