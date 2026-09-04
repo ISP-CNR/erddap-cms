@@ -1,3 +1,18 @@
+html, body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+}
+
+body > main {
+  flex: 1 0 auto;
+}
+
 .hide {
  display: none !important;
 }

@@ -90,6 +90,11 @@
           <li>
             <a class="nav-link text-dark" href="https://github.com/ISP-CNR/erddap-cms">Source code</a>
           </li>
+          {% if request.endpoint == 'login' %}
+          <li class="nav-item">
+            <div class="navbar-text">CMS version: {{ CMS_VERSION }} &middot; ERDDAP target version: {{ ERDDAP_TARGET_VERSION }}</div>
+          </li>
+          {% endif %}
         </ul>
       </div>      
     </footer>

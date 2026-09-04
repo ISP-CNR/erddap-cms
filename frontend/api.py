@@ -34,7 +34,10 @@ def validate(dataset):
     cd_output, cd_error = compile_datasets_xml()
     output, error = validate_dataset(dataset.id)
 
-    last_error = split_asterisks_blocks(output.splitlines())[-1]
+    blocks = split_asterisks_blocks(output.splitlines())
+    # DasDds.sh produced no stdout at all (e.g. it failed before printing
+    # anything) - fall back to stderr instead of crashing on an empty list.
+    last_error = blocks[-1] if blocks else error
     successfully = os.stat("/erddapData/logs/DasDds.out").st_size != 0
 
     multiauth.set_dataset_validity(dataset.id, successfully)
@@ -155,8 +158,14 @@ def dataset_create_newfromfile():
         temp_filename = f"{tempdir}/{clean_user_input(request.files['file'].filename)}"
         request.files['file'].save(temp_filename)
 
+        # if the NetCDF already declares a supported CF featureType, trust it over
+        # the form's cdm_data_type - the file already states what it is
+        detected_cdm_data_type = detect_cdm_data_type_from_netcdf(temp_filename)
+        if detected_cdm_data_type:
+            cdm_data_type = detected_cdm_data_type
+
         # generate the datasetID
-        datasetID = str(uuid.uuid4())
+        datasetID = uuid.uuid4().hex
 
         try:
             xml_content = generate_dataset_xml(temp_filename, title, summary, institution, infoUrl, cdm_data_type, quiet=False)
