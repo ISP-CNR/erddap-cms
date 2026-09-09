@@ -7,7 +7,7 @@ from flask_simple_captcha import CAPTCHA
 from flask_mail import Mail
 
 app = Flask(__name__, static_url_path = utils.URL_PATH)
-app.jinja_env.globals['ERDDAP_TARGET_VERSION'] = 'v2.30.0'
+app.jinja_env.globals['ERDDAP_TARGET_VERSION'] = 'v2.31.1'
 app.jinja_env.globals['CMS_VERSION'] = os.environ.get('CMS_VERSION', 'dev')
 multipass = Multipass()
 
