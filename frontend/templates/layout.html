@@ -43,6 +43,7 @@
               <li class="nav-item">
                 {% if current_user.is_admin() %}
                   <a class="text-light link-secondary nav-link p-3" href="{{ url_for('users') }}" alt="Users"><i class="bi bi-gear-fill"></i> Users</a>
+                  <a class="text-light link-secondary nav-link p-3" href="{{ url_for('erddap_users') }}" alt="ERDDAP users"><i class="bi bi-key-fill"></i> ERDDAP users</a>
                 {% elif current_user.active %}
                   <a class="text-light link-secondary nav-link p-3" href="{{ url_for('profile') }}" alt="Profile"><i class="bi bi-gear-fill"></i> My profile</a>
                 {% endif %}

@@ -1,4 +1,5 @@
-import os, xmltodict, subprocess
+import os, xmltodict, subprocess, hashlib
+from xml.sax.saxutils import quoteattr
 from os import listdir
 from os.path import isfile, join
 from Dataset import Dataset, FORCE_LIST
@@ -66,6 +67,29 @@ def compile_datasets_xml():
     error = result.stderr
 
     return output, error
+
+ERDDAP_USERS_XML = "/datasets_xml_parts/users.xml"
+
+def erddap_password_hash(username, password):
+    # matches ERDDAP's "UEPMD5" custom-authentication passwordEncoding
+    # (ERDDAP_passwordEncoding=UEPMD5): MD5("username:ERDDAP:password")
+    return hashlib.md5(f"{username}:ERDDAP:{password}".encode()).hexdigest()
+
+def write_erddap_users_xml():
+    # regenerates the <user> block ERDDAP reads for its "custom" authentication
+    # (see setup.xml) from the CMS's own ErddapUser table. Included by
+    # compile_datasets_xml.sh into the final datasets.xml.
+    import multiauth  # local import: multiauth imports this module, so avoid a cycle at import time
+    lines = []
+    for user in multiauth.get_erddap_users():
+        lines.append(
+            f'<user username={quoteattr(user.username)} '
+            f'password={quoteattr(user.password_hash)} '
+            f'roles={quoteattr(user.roles or "")}/>'
+        )
+    with open(ERDDAP_USERS_XML, "w") as f:
+        f.write("\n\n".join(lines))
+        f.write("\n\n")
 
 def reload_dataset(datasetID):
     env=os.environ 

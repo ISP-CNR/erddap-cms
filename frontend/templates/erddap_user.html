@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+  <!-- Main content -->
+
+  <div class="d-flex flex-row w-100">
+    <h3>{% if erddap_user %}ERDDAP user: {{ erddap_user.username }}{% else %}New ERDDAP user{% endif %}</h3>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=True) %}
+    {% if messages %}
+      {%- for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor -%}
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST">
+    {% if erddap_user %}
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-control" value="{{ erddap_user.username }}" disabled>
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password reset</label>
+        <input type="password" class="form-control" id="password" name="password" placeholder="Type here to set a new password" minlength="6">
+      </div>
+    {% else %}
+      <div class="mb-3">
+        <label for="username" class="form-label">Username</label>
+        <input type="text" class="form-control" id="username" name="username" required="required" minlength="1">
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" class="form-control" id="password" name="password" required="required" minlength="6">
+      </div>
+    {% endif %}
+
+    <div class="mb-3">
+      <label for="roles" class="form-label">Roles</label>
+      <input type="text" class="form-control" id="roles" name="roles" value="{{ erddap_user.roles or '' if erddap_user else '' }}" placeholder="e.g. IADC, GUESTS">
+      <div class="form-text">Comma-separated. Must match the values used in a dataset's <code>&lt;accessibleTo&gt;</code>.</div>
+    </div>
+
+    <div class="mt-3">
+      <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+  </form>
+
+{% endblock %}

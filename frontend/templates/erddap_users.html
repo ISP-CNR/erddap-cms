@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+  <!-- Main content -->
+
+  <div class="d-flex flex-row justify-content-between align-items-center m-2 ">
+    <h3>ERDDAP users</h3>
+    <a href="{{ url_for('erddap_user_new') }}">
+      <button class="btn btn-primary"><i class="bi bi-plus-lg"></i> New</button>
+    </a>
+  </div>
+  <p class="fw-light text-muted px-2">
+    Login accounts for ERDDAP itself (used to access private/<code>accessibleTo</code>-restricted
+    datasets), separate from CMS accounts.
+  </p>
+
+  {% with messages = get_flashed_messages(with_categories=True) %}
+    {% if messages %}
+      {%- for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor -%}
+    {% endif %}
+  {% endwith %}
+
+  <ul class="list-group">
+    {% for erddap_user in erddap_users %}
+      <li class="d-flex justify-content-between align-items-center list-group-item">
+        <div class="d-flex flex-column p-2">
+          <p class="fw-light m-0"><b>Username:</b> {{ erddap_user.username }}</p>
+          <p class="fw-light m-0"><b>Roles:</b> {{ erddap_user.roles or '' }}</p>
+        </div>
+        <div class="d-flex">
+          <a href="{{ url_for('erddap_user', id=erddap_user.id) }}">
+            <button class="btn btn-outline-primary me-4">
+              <i class="bi bi-pencil"></i>
+            </button>
+          </a>
+          <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmModal"
+            data-bs-title="Confirm deletion"
+            data-bs-body="Are you sure you want to delete ERDDAP user <strong>{{erddap_user.username}}</strong>?"
+            data-bs-url="api/erddap-users/delete"
+            data-bs-json='{{({'id': erddap_user.id})|tojson}}'
+            >
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+  {% include 'common/confirmModal.html' %}
+
+{% endblock content %}

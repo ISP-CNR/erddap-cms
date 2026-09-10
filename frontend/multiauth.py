@@ -60,6 +60,21 @@ class Dataset(db.Model):
     id = db.Column(db.String, primary_key=True)
     validated = db.Column(db.Boolean, db.ColumnDefault(False))
 
+class ErddapUser(db.Model):
+    # A login account for ERDDAP itself (ERDDAP's "custom" authentication,
+    # see setup.xml), separate from the CMS's own User model above. These are
+    # for people who need to download data from a private/accessibleTo-restricted
+    # dataset - they don't necessarily have (or need) a CMS account.
+    __tablename__ = 'erddap_users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String, unique=True, nullable=False)
+    password_hash = db.Column(db.String, nullable=False)  # UEPMD5, see utils.erddap_password_hash
+    roles = db.Column(db.String)  # comma-separated, e.g. "IADC,GUESTS" - matches <accessibleTo> values
+
+    def __repr__(self):
+        return self.username
+
 class Identity(db.Model):
     __tablename__ = 'identities'
 
@@ -286,6 +301,53 @@ def update_user(user, new_password):
     # db.session.update(user)
     db.session.commit()
     return "ok"
+
+def get_erddap_users():
+    return ErddapUser.query.order_by(ErddapUser.username).all()
+
+def get_erddap_user(id):
+    return ErddapUser.query.filter_by(id=id).first()
+
+def add_erddap_user(username, password, roles):
+    if not username:
+        return "Empty username", None
+    if ErddapUser.query.filter_by(username=username).first():
+        return "A user with this username already exists", None
+    if not password or len(password) < 6:
+        return "Password too short", None
+
+    erddap_user = ErddapUser(
+        username=username,
+        password_hash=erddap_password_hash(username, password),
+        roles=roles or "",
+    )
+    db.session.add(erddap_user)
+    db.session.commit()
+    write_erddap_users_xml()
+    compile_datasets_xml()
+    return "ok", erddap_user
+
+def update_erddap_user(erddap_user, new_password, roles):
+    if new_password:
+        if len(new_password) < 6:
+            return "Password too short"
+        erddap_user.password_hash = erddap_password_hash(erddap_user.username, new_password)
+
+    erddap_user.roles = roles or ""
+    db.session.commit()
+    write_erddap_users_xml()
+    compile_datasets_xml()
+    return "ok"
+
+def delete_erddap_user(id):
+    erddap_user = ErddapUser.query.filter_by(id=id).first()
+    if not erddap_user:
+        return False
+    db.session.delete(erddap_user)
+    db.session.commit()
+    write_erddap_users_xml()
+    compile_datasets_xml()
+    return True
 
 def delete_dataset_permissions(dataset_id):
     for permission in Permission.query.filter_by(dataset_id=dataset_id).all():
