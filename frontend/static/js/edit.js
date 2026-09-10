@@ -211,6 +211,51 @@ function generateXMLfromForm() {
   data.dataset.dataVariable = [];
   data.dataset.axisVariable = [];
 
+  // default role used when a non-admin just toggles "Private" without picking
+  // specific roles (that field is admin-only - see edit.html); an admin must
+  // still assign this role to at least one ERDDAP user for it to grant access
+  const DEFAULT_PRIVATE_ROLE = "PRIVATE";
+
+  const privateSwitch = document.getElementById('privateDatasetSwitch');
+  if (privateSwitch && privateSwitch.checked) {
+    const rolesInput = document.getElementById('accessibleTo');
+    const roles = rolesInput ? rolesInput.value.trim() : '';
+    data.dataset.accessibleTo = roles || DEFAULT_PRIVATE_ROLE;
+
+    // default: graphs/metadata stay public, only the raw data requires login
+    // (matches how private datasets are normally set up - see IADC's own
+    // datasets, e.g. graphsAccessibleTo=public alongside accessibleTo).
+    // Admins can still opt out via the checkbox to lock down everything.
+    const graphsCheckbox = document.getElementById('graphsAccessibleTo');
+    if (graphsCheckbox && !graphsCheckbox.checked) {
+      delete data.dataset.graphsAccessibleTo;
+    } else {
+      data.dataset.graphsAccessibleTo = "public";
+    }
+  } else {
+    delete data.dataset.accessibleTo;
+    delete data.dataset.graphsAccessibleTo;
+  }
+
+  // note the restriction in the ACDD "license" global attribute too (the
+  // conventional NC_GLOBAL attribute for access/distribution constraints -
+  // there's no separate standard attribute for this), so it's visible to
+  // anyone reading the dataset's own metadata, not just via ERDDAP's
+  // accessibleTo mechanism. Strip it first so toggling private on/off
+  // repeatedly doesn't pile up duplicate notes.
+  const LICENSE_EMBARGO_NOTE = " | Data access restricted (embargo) - contact the point of contact to request access.";
+  const licenseInput = document.getElementById('global_license');
+  if (licenseInput) {
+    let license = licenseInput.value;
+    if (license.endsWith(LICENSE_EMBARGO_NOTE)) {
+      license = license.slice(0, -LICENSE_EMBARGO_NOTE.length);
+    }
+    if (privateSwitch && privateSwitch.checked) {
+      license += LICENSE_EMBARGO_NOTE;
+    }
+    licenseInput.value = license;
+  }
+
   const dataVariables = groupElementsByCommonAttribute(dataVarInputs, 'data-varnum');
   const dataVarAttributes = groupElementsByCommonAttribute(dataVarAttributesInputs, 'data-varnum');
 
