@@ -211,16 +211,19 @@ function generateXMLfromForm() {
   data.dataset.dataVariable = [];
   data.dataset.axisVariable = [];
 
-  // default role used when a non-admin just toggles "Private" without picking
-  // specific roles (that field is admin-only - see edit.html); an admin must
-  // still assign this role to at least one ERDDAP user for it to grant access
-  const DEFAULT_PRIVATE_ROLE = "PRIVATE";
+  // default roles used when the "Accessible to" field is left empty (it's
+  // admin-only - see edit.html - so this is always what a non-admin gets):
+  // a role unique to this dataset (so one person's access doesn't leak into
+  // every other private dataset) plus the standing ADMIN role that can
+  // always see every private dataset. An admin still has to assign the
+  // per-dataset role (or ADMIN) to an ERDDAP user for it to grant access.
+  const DEFAULT_PRIVATE_ROLES = `PRIVATE_${data.dataset['@datasetID']},ADMIN`;
 
   const privateSwitch = document.getElementById('privateDatasetSwitch');
   if (privateSwitch && privateSwitch.checked) {
     const rolesInput = document.getElementById('accessibleTo');
     const roles = rolesInput ? rolesInput.value.trim() : '';
-    data.dataset.accessibleTo = roles || DEFAULT_PRIVATE_ROLE;
+    data.dataset.accessibleTo = roles || DEFAULT_PRIVATE_ROLES;
 
     // default: graphs/metadata stay public, only the raw data requires login
     // (matches how private datasets are normally set up - see IADC's own

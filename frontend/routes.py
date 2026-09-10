@@ -183,6 +183,12 @@ def erddap_users():
   erddap_users = multiauth.get_erddap_users()
   return render_template('erddap_users.html', erddap_users=erddap_users, back_path=back_path)
 
+def _roles_from_form():
+  # the roles-select TomSelect (create:true) lets the admin both pick
+  # existing dataset-specific roles/ADMIN and type new ones - either way
+  # they all end up as <option>s on submit, read the same way
+  return ','.join(dict.fromkeys(request.form.getlist('roles')))  # dict.fromkeys: dedupe, keep order
+
 @app.route(f"{URL_PATH}/erddap-users/new", methods=['GET', 'POST'])
 @multiauth.login_required
 @multiauth.admin_required
@@ -192,7 +198,7 @@ def erddap_user_new():
   if request.method == 'POST':
     username = request.form.get('username', '').strip()
     password = request.form.get('password', '')
-    roles = request.form.get('roles', '').strip()
+    roles = _roles_from_form()
     result, erddap_user = multiauth.add_erddap_user(username, password, roles)
 
     if result == "ok":
@@ -201,7 +207,7 @@ def erddap_user_new():
     else:
       flash(result, 'danger')
 
-  return render_template('erddap_user.html', erddap_user=None, back_path=back_path)
+  return render_template('erddap_user.html', erddap_user=None, private_dataset_roles=get_private_dataset_roles(), back_path=back_path)
 
 @app.route(f"{URL_PATH}/erddap-users/<id>", methods=['GET', 'POST'])
 @multiauth.login_required
@@ -212,7 +218,7 @@ def erddap_user(id):
   erddap_user = multiauth.get_erddap_user(id)
   if request.method == 'POST':
     new_password = request.form.get('password', '')
-    roles = request.form.get('roles', '').strip()
+    roles = _roles_from_form()
     result = multiauth.update_erddap_user(erddap_user, new_password, roles)
 
     if result == "ok":
@@ -220,7 +226,7 @@ def erddap_user(id):
     else:
       flash(result, 'danger')
 
-  return render_template('erddap_user.html', erddap_user=erddap_user, back_path=back_path)
+  return render_template('erddap_user.html', erddap_user=erddap_user, private_dataset_roles=get_private_dataset_roles(), back_path=back_path)
 
 
 @app.route(f"{URL_PATH}/profile", methods=['GET', 'POST'])

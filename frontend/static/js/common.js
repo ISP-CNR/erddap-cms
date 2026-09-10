@@ -36,4 +36,12 @@ $(document).ready(() => {
         }
     });
   })
+
+  $('.roles-select').each(function(index){
+    new TomSelect($(this), {
+      create: true,        // allow typing a role not in the list
+      persist: false,
+      createOnBlur: true,
+    });
+  })
 });

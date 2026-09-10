@@ -3,7 +3,7 @@ from flask import request, send_from_directory, jsonify
 from utils import *
 from main import app
 import multiauth
-from Dataset import Dataset
+from Dataset import Dataset, FORCE_LIST
 from ISO19139 import ISO19139
 import base64
 import tempfile
@@ -50,6 +50,8 @@ def validate(dataset):
 @multiauth.active_required
 @multiauth.load_and_authorize_dataset
 def save(dataset):
+    was_private = bool(dataset.accessible_to)
+
     filepath = xmldir+"/"+dataset.filename
     filecontent = request.json['text']
 
@@ -62,6 +64,27 @@ def save(dataset):
     f.close()
 
     multiauth.set_dataset_validity(dataset.id, False)
+
+    # notify admins the first time a dataset becomes private, so they know
+    # to set up ERDDAP user access for it (see multiauth.ErddapUser) -
+    # nothing else surfaces this otherwise
+    try:
+        is_private_now = bool(xmltodict.parse(filecontent, force_list=FORCE_LIST)['dataset'].get('accessibleTo'))
+    except Exception:
+        is_private_now = False
+
+    if is_private_now and not was_private:
+        subject = 'ERDDAP CMS: a dataset was marked private'
+        sender = os.environ['ERDDAP_emailSender']
+        recipients = [os.environ['ERDDAP_emailEverythingTo']]
+        message = (
+            f"Hey admin, user {multiauth.current_user.name or multiauth.current_user.id} just marked "
+            f"dataset '{dataset.title}' (id {dataset.id}) as private.\n\n"
+            f"Set up ERDDAP user access for it under \"ERDDAP users\" - unless a custom role was "
+            f"picked, the default is PRIVATE_{dataset.id} (plus ADMIN, which can access every "
+            f"private dataset)."
+        )
+        send_mail(app.mailer, subject, message, sender, recipients)
 
     return "ok"
 
