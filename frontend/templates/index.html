@@ -190,7 +190,7 @@
           <td id="td-id-{{dataset.id}}"  style="max-width: 10px;" dataset_id="{{dataset.title}}" data-bs-toggle="tooltip" data-bs-title="{{dataset.title | default('No title', True)}}" data-placement="top">
 
           
-              {% if dataset.active %}<a href="{{dataset.link}}">{% endif %}{{dataset.title|default("Undefined", true)}}{% if dataset.active %}</a>{% endif %}
+              {% if dataset.active %}<a href="{{dataset.info_link if dataset.accessible_to else dataset.link}}">{% endif %}{{dataset.title|default("Undefined", true)}}{% if dataset.active %}</a>{% endif %}
           </td>
 
           
@@ -200,6 +200,11 @@
               <i data-bs-toggle="tooltip" data-bs-title="Enabled?" class="{% if dataset.active %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i>
               <i data-bs-toggle="tooltip" data-bs-title="Valid?" class="{% if dataset.validated %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i>
               <i data-bs-toggle="tooltip" data-bs-title="Published?" class="{% if dataset.published %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i>
+              {% if dataset.accessible_to %}
+                <i data-bs-toggle="tooltip" data-bs-title="Private (accessible to: {{dataset.accessible_to}})" class="bi bi-lock-fill text-warning"></i>
+              {% else %}
+                <i data-bs-toggle="tooltip" data-bs-title="Public" class="bi bi-unlock-fill text-muted"></i>
+              {% endif %}
             </div>
           </td>
           <!--
