@@ -44,6 +44,14 @@
         </div>
       </div>
 
+      {% if data.dataset.accessible_to and (not data.dataset.validated or not data.dataset.published) %}
+        <div class="alert alert-warning mx-2 d-flex align-items-center gap-2" role="alert">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <div>This dataset is marked private, but that isn't in effect on ERDDAP yet - it's still
+          reachable as before. Click <strong>Validate</strong>, then <strong>Publish</strong>/<strong>Reload</strong> below to apply it.</div>
+        </div>
+      {% endif %}
+
       <div class="card mx-2 mb-3">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
