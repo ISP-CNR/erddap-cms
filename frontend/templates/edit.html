@@ -82,13 +82,14 @@
                 <label class="form-check-label" for="flexSwitchCheckDefault">Enable dataset</label>
               </div>
             {% endif %}
-            <div>
+            <div style="max-width: 26rem;">
               <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" role="switch" id="privateDatasetSwitch"
                   {% if data.dataset.accessible_to %} checked {% endif %}
                   onchange="document.getElementById('privateDatasetOptions').classList.toggle('d-none', !this.checked)">
                 <label class="form-check-label" for="privateDatasetSwitch"><i class="bi bi-lock-fill"></i> Private dataset</label>
               </div>
+              <div class="form-text">Only people you grant access to will be able to download the data. The title, summary and graphs stay visible to everyone. Useful, for example, if the dataset is under embargo (you can change this at any time).</div>
               {% if data['current_user'].admin %}
                 <div id="privateDatasetOptions" class="mt-3 p-3 bg-light rounded {% if not data.dataset.accessible_to %}d-none{% endif %}" style="max-width: 26rem;">
                   <label for="accessibleTo" class="form-label">Accessible to (ERDDAP roles)</label>
