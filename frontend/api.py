@@ -394,6 +394,14 @@ def dataset_generate_iso19139():
   iso_metadata.add_link(dataset.link+".csv", Protocol.download.value, "Direct download", "Download a CSV version")
   iso_metadata.add_link(dataset.link+".nc", Protocol.download.value, "Direct download", "Download a NetCDF version")
 
+  if dataset.accessible_to:
+    # dataset is under an ERDDAP-login restriction: note the embargo in the
+    # metadata even though the (still generated) data links require login
+    iso_metadata.set_embargo(
+      "Data access is temporarily restricted (embargo). Please contact the "
+      "point of contact to request access."
+    )
+
   lat_max = get_dataset_attribute_from_ERDDAP(dataset.id, 'geospatial_lat_max')
   lat_min = get_dataset_attribute_from_ERDDAP(dataset.id, 'geospatial_lat_min')
   lon_max = get_dataset_attribute_from_ERDDAP(dataset.id, 'geospatial_lon_max')
