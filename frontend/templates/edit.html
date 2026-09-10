@@ -36,73 +36,74 @@
     </div>
   </div>
 
-  <nav class="navbar navbar-light bg-light mb-4">
+  <div class="mb-4">
       <div class="row w-100 mx-2 mb-3">
         <div class="d-flex col-12">
           <h3 class="align-self-center d-inline fw-bold text-truncate">{{ data.dataset.title }}
           </h3>
         </div>
       </div>
-      <div class="row w-100 mb-3 mx-0 pb-1 align-items-center">
-        <div class="col-8">
-          <p class="fw-light m-0"><i class="{% if data.dataset.active %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i> Enabled</p>
-          <p class="fw-light m-0"><i class="{% if data.dataset.validated %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i> Validated</p>
-          <p class="fw-light m-0"><i class="{% if data.dataset.published %} bi bi-check-circle-fill text-success {% else %} bi bi-x-circle-fill text-danger {% endif %}"></i> Published</p>
-        </div>
-        <div class="col-4">
-          <div class="d-flex justify-content-end mb-3">
-            <button class="btn btn-success me-2" onclick="save('{{ data.id }}')">Save</button>
-            <button class="btn btn-primary me-2" onclick="validate('{{ data.id }}')">Validate</button>
-            <span class="d-inline-block me-2" tabindex="0" {% if not data.dataset.validated %} data-bs-toggle="tooltip" data-bs-title="Dataset needs to be valid to be published or reloaded." {% endif %}>                 
-              <button class="btn btn-secondary" onclick="reload(this,'{{ data.id }}')" {% if not data.dataset.validated %} disabled {% endif %}>
-                <span id="action-button-spinner"class="spinner-border spinner-border-sm hide" role="status" aria-hidden="true"></span>
-                <span id="action-button-text" class="">{% if data.dataset.published %} Reload {% else %} Publish {% endif %}</span>
-              </button>
-            </span>
-          </div>
-          {% if data['current_user'].admin %}
-            <div class="form-check form-switch d-flex justify-content-end align-items">
-              <input class="form-check-input mx-1" type="checkbox" role="switch" id="flexSwitchCheckDefault" onchange="enableDataset(this, '{{ data.id }}')" 
-              {% if data.dataset.active %} checked {% endif %}>
-              <label class="form-check-label" for="flexSwitchCheckDefault">Enable dataset</label>
+
+      <div class="card mx-2 mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="d-flex gap-3 text-nowrap">
+              <span class="{% if data.dataset.active %}text-success{% else %}text-danger{% endif %}"><i class="bi bi-{% if data.dataset.active %}check{% else %}x{% endif %}-circle-fill"></i> Enabled</span>
+              <span class="{% if data.dataset.validated %}text-success{% else %}text-danger{% endif %}"><i class="bi bi-{% if data.dataset.validated %}check{% else %}x{% endif %}-circle-fill"></i> Validated</span>
+              <span class="{% if data.dataset.published %}text-success{% else %}text-danger{% endif %}"><i class="bi bi-{% if data.dataset.published %}check{% else %}x{% endif %}-circle-fill"></i> Published</span>
             </div>
-          {% endif %}          
-        </div>
-      </div>
-      <div class="row w-100 mb-3 mx-0 pb-3 border-bottom">
-        <div class="col-12">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="privateDatasetSwitch"
-              {% if data.dataset.accessible_to %} checked {% endif %}
-              onchange="document.getElementById('privateDatasetOptions').classList.toggle('d-none', !this.checked)">
-            <label class="form-check-label" for="privateDatasetSwitch">Private dataset</label>
+            <div class="d-flex gap-2">
+              <button class="btn btn-success" onclick="save('{{ data.id }}')">Save</button>
+              <button class="btn btn-primary" onclick="validate('{{ data.id }}')">Validate</button>
+              <span tabindex="0" {% if not data.dataset.validated %} data-bs-toggle="tooltip" data-bs-title="Dataset needs to be valid to be published or reloaded." {% endif %}>
+                <button class="btn btn-secondary" onclick="reload(this,'{{ data.id }}')" {% if not data.dataset.validated %} disabled {% endif %}>
+                  <span id="action-button-spinner" class="spinner-border spinner-border-sm hide" role="status" aria-hidden="true"></span>
+                  <span id="action-button-text">{% if data.dataset.published %} Reload {% else %} Publish {% endif %}</span>
+                </button>
+              </span>
+            </div>
           </div>
-          {% if data['current_user'].admin %}
-            <div id="privateDatasetOptions" class="mt-2 {% if not data.dataset.accessible_to %}d-none{% endif %}">
-              <div class="row">
-                <div class="col-6">
+
+          <hr>
+
+          <div class="d-flex flex-wrap gap-5">
+            {% if data['current_user'].admin %}
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault" onchange="enableDataset(this, '{{ data.id }}')"
+                {% if data.dataset.active %} checked {% endif %}>
+                <label class="form-check-label" for="flexSwitchCheckDefault">Enable dataset</label>
+              </div>
+            {% endif %}
+            <div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="privateDatasetSwitch"
+                  {% if data.dataset.accessible_to %} checked {% endif %}
+                  onchange="document.getElementById('privateDatasetOptions').classList.toggle('d-none', !this.checked)">
+                <label class="form-check-label" for="privateDatasetSwitch"><i class="bi bi-lock-fill"></i> Private dataset</label>
+              </div>
+              {% if data['current_user'].admin %}
+                <div id="privateDatasetOptions" class="mt-3 p-3 bg-light rounded {% if not data.dataset.accessible_to %}d-none{% endif %}" style="max-width: 26rem;">
                   <label for="accessibleTo" class="form-label">Accessible to (ERDDAP roles)</label>
                   <input type="text" class="form-control" id="accessibleTo" placeholder="leave empty for the default PRIVATE role" value="{{ data.dataset.accessible_to or '' }}">
                   <div class="form-text">Comma-separated. Must match a role assigned to an <a href="{{ url_for('erddap_users') }}">ERDDAP user</a>. Leave empty to use the default <code>PRIVATE</code> role.</div>
-                </div>
-                <div class="col-6 d-flex align-items-end pb-2">
-                  <div class="form-check">
+                  <div class="form-check mt-2">
                     <input class="form-check-input" type="checkbox" id="graphsAccessibleTo" {% if not data.dataset.accessible_to or data.dataset.graphs_accessible_to == 'public' %} checked {% endif %}>
                     <label class="form-check-label" for="graphsAccessibleTo">Graphs &amp; metadata are public (only raw data requires login)</label>
                   </div>
                 </div>
-              </div>
+              {% endif %}
             </div>
-          {% endif %}
+          </div>
         </div>
       </div>
+
     {% if data['current_user'].admin == true %}
-    <div class="nav nav-tabs" id="nav-tab" role="tablist">
+    <div class="nav nav-tabs mx-2" id="nav-tab" role="tablist">
       <button class="nav-link active" id="nav-form-tab" data-bs-toggle="tab" data-bs-target="#nav-form" type="button" role="tab" aria-controls="nav-form" aria-selected="true">Simple</button>
       <button class="nav-link" id="nav-xml-tab" data-bs-toggle="tab" data-bs-target="#nav-xml" type="button" role="tab" aria-controls="nav-xml" aria-selected="false">XML</button>
     </div>
     {% endif %}
-  </nav>
+  </div>
   <div class="tab-content" id="nav-tabContent">
     <div class="tab-pane fade show active" id="nav-form" role="tabpanel" aria-labelledby="nav-form-tab">
       {% include 'edit/form.html' %}
