@@ -152,6 +152,19 @@ class ISO19139:
     self.mydict["gmd:MD_Metadata"]["gmd:distributionInfo"]["gmd:MD_Distribution"]["gmd:distributor"]["gmd:MD_Distributor"]["gmd:distributorContact"]["gmd:CI_ResponsibleParty"]["gmd:contactInfo"]["gmd:CI_Contact"]["gmd:onlineResource"]["gmd:CI_OnlineResource"]["gmd:linkage"]["gmd:URL"] = url
     self.mydict["gmd:MD_Metadata"]["gmd:distributionInfo"]["gmd:MD_Distribution"]["gmd:distributor"]["gmd:MD_Distributor"]["gmd:distributorContact"]["gmd:CI_ResponsibleParty"]["gmd:contactInfo"]["gmd:CI_Contact"]["gmd:onlineResource"]["gmd:CI_OnlineResource"]["gmd:name"]["gco:CharacterString"] = url_name
 
+  def set_embargo(self, note):
+    # marks the record as under embargo/restricted access (e.g. the dataset has
+    # an ERDDAP <accessibleTo>) - standard ISO 19115 practice: an accessConstraints
+    # code plus a human-readable note, alongside the existing useLimitation (license)
+    legal_constraints = self.mydict["gmd:MD_Metadata"]["gmd:identificationInfo"]["gmd:MD_DataIdentification"]["gmd:resourceConstraints"]["gmd:MD_LegalConstraints"]
+    legal_constraints["gmd:accessConstraints"] = {
+      "gmd:MD_RestrictionCode": {
+        "@codeList": "http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#MD_RestrictionCode",
+        "@codeListValue": "otherRestrictions"
+      }
+    }
+    legal_constraints["gmd:otherConstraints"] = { "gco:CharacterString": note }
+
   def lineage(self, value):
     self.mydict["gmd:MD_Metadata"]["gmd:dataQualityInfo"]["gmd:DQ_DataQuality"]["gmd:lineage"]["gmd:LI_Lineage"]["gmd:statement"]["gco:CharacterString"] = value
 
