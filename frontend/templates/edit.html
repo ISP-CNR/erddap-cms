@@ -93,8 +93,8 @@
               {% if data['current_user'].admin %}
                 <div id="privateDatasetOptions" class="mt-3 p-3 bg-light rounded {% if not data.dataset.accessible_to %}d-none{% endif %}" style="max-width: 26rem;">
                   <label for="accessibleTo" class="form-label">Accessible to (ERDDAP roles)</label>
-                  <input type="text" class="form-control" id="accessibleTo" placeholder="leave empty for the default PRIVATE role" value="{{ data.dataset.accessible_to or '' }}">
-                  <div class="form-text">Comma-separated. Must match a role assigned to an <a href="{{ url_for('erddap_users') }}">ERDDAP user</a>. Leave empty to use the default <code>PRIVATE</code> role.</div>
+                  <input type="text" class="form-control" id="accessibleTo" placeholder="leave empty for PRIVATE_{{ data.dataset.id }},ADMIN" value="{{ data.dataset.accessible_to or '' }}">
+                  <div class="form-text">Comma-separated. Must match a role assigned to an <a href="{{ url_for('erddap_users') }}">ERDDAP user</a>. Leave empty to use a role unique to this dataset (<code>PRIVATE_{{ data.dataset.id }}</code>) plus <code>ADMIN</code>, which can always access every private dataset.</div>
                   <div class="form-check mt-2">
                     <input class="form-check-input" type="checkbox" id="graphsAccessibleTo" {% if not data.dataset.accessible_to or data.dataset.graphs_accessible_to == 'public' %} checked {% endif %}>
                     <label class="form-check-label" for="graphsAccessibleTo">Graphs &amp; metadata are public (only raw data requires login)</label>

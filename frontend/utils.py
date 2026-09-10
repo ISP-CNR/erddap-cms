@@ -58,6 +58,34 @@ def get_datasets_list(user):
 def get_datasets_id_list():
     return [f.removesuffix(".xml") for f in listdir(xmldir) if isfile(join(xmldir, f))]
 
+def get_private_dataset_roles():
+    # (role, dataset title) pairs collected from every private dataset's
+    # accessibleTo, so the ERDDAP user "Roles" field can offer readable
+    # options ("Snow height at ..." rather than a bare PRIVATE_<uuid> string).
+    # Excludes ADMIN, which is offered separately as a standing option.
+    roles = []
+    for dataset_id in get_datasets_id_list():
+        try:
+            with open(join(xmldir, dataset_id + ".xml")) as f:
+                d = xmltodict.parse(f.read(), force_list=FORCE_LIST)
+            dataset = d['dataset']
+            accessible_to = dataset.get('accessibleTo')
+            if not accessible_to:
+                continue
+            title = dataset_id
+            for att in dataset.get('addAttributes', {}).get('att') or []:
+                if att.get('@name') == 'title' and att.get('#text'):
+                    title = att['#text']
+                    break
+        except Exception:
+            continue
+
+        for role in accessible_to.split(','):
+            role = role.strip()
+            if role and role != 'ADMIN':
+                roles.append({'role': role, 'dataset_id': dataset_id, 'title': title})
+    return roles
+
 def compile_datasets_xml():
     env=os.environ 
     bash_command = "bash /datasets_xml_parts/compile_datasets_xml.sh"

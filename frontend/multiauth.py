@@ -365,3 +365,11 @@ with app.app_context():
         user.identities.append(identity)
         db.session.add(user)
         db.session.commit()
+
+    # users.xml (unlike the DB) isn't on a persistent volume - it's written
+    # into the image's /datasets_xml_parts at runtime, so it's lost on every
+    # container recreation. Regenerate it from the DB (the source of truth)
+    # on every startup, so ERDDAP access for existing ErddapUsers survives
+    # restarts/redeploys.
+    write_erddap_users_xml()
+    compile_datasets_xml()

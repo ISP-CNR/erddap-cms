@@ -40,10 +40,20 @@
       </div>
     {% endif %}
 
+    {% set selected_roles = (erddap_user.roles or '').split(',') | map('trim') | select() | list if erddap_user else [] %}
+    {% set known_roles = ['ADMIN'] + (private_dataset_roles | map(attribute='role') | list) %}
     <div class="mb-3">
-      <label for="roles" class="form-label">Roles</label>
-      <input type="text" class="form-control" id="roles" name="roles" value="{{ erddap_user.roles or '' if erddap_user else '' }}" placeholder="e.g. IADC, GUESTS">
-      <div class="form-text">Comma-separated. Must match the values used in a dataset's <code>&lt;accessibleTo&gt;</code>.</div>
+      <label for="roles_select" class="form-label">Roles</label>
+      <select class="roles-select form-control p-0 m-0" id="roles_select" name="roles" multiple>
+        <option value="ADMIN" {% if 'ADMIN' in selected_roles %}selected{% endif %}>ADMIN &mdash; access to every private dataset</option>
+        {% for r in private_dataset_roles %}
+          <option value="{{ r.role }}" {% if r.role in selected_roles %}selected{% endif %}>{{ r.title }} ({{ r.role }})</option>
+        {% endfor %}
+        {% for role in selected_roles if role not in known_roles %}
+          <option value="{{ role }}" selected>{{ role }}</option>
+        {% endfor %}
+      </select>
+      <div class="form-text">Pick one or more, or type to add a role not tied to any dataset yet.</div>
     </div>
 
     <div class="mt-3">
