@@ -12,7 +12,9 @@
   </div>
   <p class="fw-light text-muted px-2">
     Login accounts for ERDDAP itself (used to access private/<code>accessibleTo</code>-restricted
-    datasets), separate from CMS accounts.
+    datasets), separate from CMS accounts. When someone marks a dataset "Private" without
+    picking specific roles, it defaults to the <code>PRIVATE</code> role - assign that role
+    to a user here to give them access to every such dataset.
   </p>
 
   {% with messages = get_flashed_messages(with_categories=True) %}

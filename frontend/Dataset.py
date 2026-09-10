@@ -33,8 +33,11 @@ class Dataset:
     publisher_name=None
     publisher_url=None
     link=None
+    info_link=None
     history=None
     files_dir=None
+    accessible_to=None
+    graphs_accessible_to=None
     
     def __init__(self, filepath):
       with open(filepath, 'r') as f:
@@ -62,8 +65,16 @@ class Dataset:
             self.active = False
 
           self.link = f"{utils.ERDDAP_BASE_URL}/erddap/{self.get_dap_type()}/{self.id}"
+          # info page: metadata only, no data - stays accessible even when
+          # accessibleTo blocks the tabledap/griddap Data Access Form above
+          self.info_link = f"{utils.ERDDAP_BASE_URL}/erddap/info/{self.id}/index.html"
 
-    
+          # ERDDAP's own access control (separate from the CMS's User/Permission
+          # model above): a comma-separated list of ERDDAP roles (see ErddapUser)
+          # allowed to access the data, or None if the dataset is public.
+          self.accessible_to = self.mydict['dataset'].get('accessibleTo')
+          self.graphs_accessible_to = self.mydict['dataset'].get('graphsAccessibleTo')
+
           self.published = self.id in utils.get_published_erddap_datasets()
           #if (self.validated==False):
             #to DO, write on

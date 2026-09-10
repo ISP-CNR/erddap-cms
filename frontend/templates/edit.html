@@ -69,6 +69,33 @@
           {% endif %}          
         </div>
       </div>
+      <div class="row w-100 mb-3 mx-0 pb-3 border-bottom">
+        <div class="col-12">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="privateDatasetSwitch"
+              {% if data.dataset.accessible_to %} checked {% endif %}
+              onchange="document.getElementById('privateDatasetOptions').classList.toggle('d-none', !this.checked)">
+            <label class="form-check-label" for="privateDatasetSwitch">Private dataset</label>
+          </div>
+          {% if data['current_user'].admin %}
+            <div id="privateDatasetOptions" class="mt-2 {% if not data.dataset.accessible_to %}d-none{% endif %}">
+              <div class="row">
+                <div class="col-6">
+                  <label for="accessibleTo" class="form-label">Accessible to (ERDDAP roles)</label>
+                  <input type="text" class="form-control" id="accessibleTo" placeholder="leave empty for the default PRIVATE role" value="{{ data.dataset.accessible_to or '' }}">
+                  <div class="form-text">Comma-separated. Must match a role assigned to an <a href="{{ url_for('erddap_users') }}">ERDDAP user</a>. Leave empty to use the default <code>PRIVATE</code> role.</div>
+                </div>
+                <div class="col-6 d-flex align-items-end pb-2">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="graphsAccessibleTo" {% if not data.dataset.accessible_to or data.dataset.graphs_accessible_to == 'public' %} checked {% endif %}>
+                    <label class="form-check-label" for="graphsAccessibleTo">Graphs &amp; metadata are public (only raw data requires login)</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
     {% if data['current_user'].admin == true %}
     <div class="nav nav-tabs" id="nav-tab" role="tablist">
       <button class="nav-link active" id="nav-form-tab" data-bs-toggle="tab" data-bs-target="#nav-form" type="button" role="tab" aria-controls="nav-form" aria-selected="true">Simple</button>
