@@ -174,6 +174,55 @@ def user(id):
   return render_template('user.html', user=user, datasets=get_datasets_list(multiauth.current_user), back_path=back_path)
 
 
+@app.route(f"{URL_PATH}/erddap-users")
+@multiauth.login_required
+@multiauth.admin_required
+@multiauth.active_required
+def erddap_users():
+  back_path = url_for('index')
+  erddap_users = multiauth.get_erddap_users()
+  return render_template('erddap_users.html', erddap_users=erddap_users, back_path=back_path)
+
+@app.route(f"{URL_PATH}/erddap-users/new", methods=['GET', 'POST'])
+@multiauth.login_required
+@multiauth.admin_required
+@multiauth.active_required
+def erddap_user_new():
+  back_path = url_for('erddap_users')
+  if request.method == 'POST':
+    username = request.form.get('username', '').strip()
+    password = request.form.get('password', '')
+    roles = request.form.get('roles', '').strip()
+    result, erddap_user = multiauth.add_erddap_user(username, password, roles)
+
+    if result == "ok":
+      flash('ERDDAP user successfully created', 'info')
+      return redirect(url_for('erddap_users'))
+    else:
+      flash(result, 'danger')
+
+  return render_template('erddap_user.html', erddap_user=None, back_path=back_path)
+
+@app.route(f"{URL_PATH}/erddap-users/<id>", methods=['GET', 'POST'])
+@multiauth.login_required
+@multiauth.admin_required
+@multiauth.active_required
+def erddap_user(id):
+  back_path = url_for('erddap_users')
+  erddap_user = multiauth.get_erddap_user(id)
+  if request.method == 'POST':
+    new_password = request.form.get('password', '')
+    roles = request.form.get('roles', '').strip()
+    result = multiauth.update_erddap_user(erddap_user, new_password, roles)
+
+    if result == "ok":
+      flash('ERDDAP user successfully updated', 'info')
+    else:
+      flash(result, 'danger')
+
+  return render_template('erddap_user.html', erddap_user=erddap_user, back_path=back_path)
+
+
 @app.route(f"{URL_PATH}/profile", methods=['GET', 'POST'])
 @multiauth.login_required
 @multiauth.active_required

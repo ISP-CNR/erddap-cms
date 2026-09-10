@@ -3,7 +3,12 @@
 search_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 parts_dir="${search_dir}/active"
 
-filenames="${search_dir}/start.xml"
+# <user> entries for ERDDAP's "custom" authentication, managed via the CMS
+# (see utils.write_erddap_users_xml) - may not exist yet on a fresh deploy.
+users_file="${search_dir}/users.xml"
+[ -f "$users_file" ] || touch "$users_file"
+
+filenames="${search_dir}/start.xml ${users_file}"
 
 if [ ! -z "$( ls -A $parts_dir )" ]; then
   for entry in "$parts_dir"/*

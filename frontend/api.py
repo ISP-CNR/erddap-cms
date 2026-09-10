@@ -306,6 +306,14 @@ def delete_user():
     multiauth.delete_user(request.json['id'])
     return { "result": "ok" }
 
+@app.route(f"{URL_PATH}/api/erddap-users/delete", methods=['POST'])
+@multiauth.login_required
+@multiauth.active_required
+@multiauth.admin_required
+def delete_erddap_user():
+    multiauth.delete_erddap_user(request.json['id'])
+    return { "result": "ok" }
+
 
 @app.route(f"{URL_PATH}/api/dataset/iso19139", methods=['POST'])
 @multiauth.login_required

@@ -1,3 +1,13 @@
 tomcat_logs
 datasets_xml
 **/__pycache__/
+frontend/logs
+frontend/.vscode
+custom/datasets_xml_parts/active/*.xml
+custom/datasets_xml_parts/users.xml
+custom/datasets.xml
+frontend/test.db
+frontend/metadata
+erddapy_playground
+*.tar
+frontend/static/nc
