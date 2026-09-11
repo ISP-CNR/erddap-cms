@@ -55,6 +55,28 @@ def save(dataset):
     filepath = xmldir+"/"+dataset.filename
     filecontent = request.json['text']
 
+    if not multiauth.current_user.is_admin():
+        # the custom "Accessible to (ERDDAP roles)" field and the
+        # "Graphs & metadata are public" checkbox are admin-only in the
+        # edit form (edit.html) - enforce that here too, since a non-admin
+        # with edit access to this dataset could otherwise POST arbitrary
+        # XML directly and set accessibleTo to anything (e.g. "ADMIN")
+        try:
+            new_dataset = xmltodict.parse(filecontent, force_list=FORCE_LIST)['dataset']
+        except Exception:
+            return {"error": "Invalid XML"}, 400
+
+        new_accessible_to = new_dataset.get('accessibleTo')
+        new_graphs = new_dataset.get('graphsAccessibleTo')
+        default_accessible_to = f"PRIVATE_{dataset.id},ADMIN"
+
+        if new_accessible_to and new_accessible_to != default_accessible_to:
+            return {"error": "Only admins can set custom accessibleTo roles"}, 403
+        if new_accessible_to and new_graphs != 'public':
+            return {"error": "Only admins can restrict graphs/metadata access"}, 403
+        if not new_accessible_to and new_graphs:
+            return {"error": "graphsAccessibleTo without accessibleTo"}, 403
+
     # Append two new lines after the filecontent if not already present
     if (filecontent[-1] != '\n'):
         filecontent = filecontent + '\n\n'
@@ -74,17 +96,24 @@ def save(dataset):
         is_private_now = False
 
     if is_private_now and not was_private:
-        subject = 'ERDDAP CMS: a dataset was marked private'
-        sender = os.environ['ERDDAP_emailSender']
-        recipients = [os.environ['ERDDAP_emailEverythingTo']]
-        message = (
-            f"Hey admin, user {multiauth.current_user.name or multiauth.current_user.id} just marked "
-            f"dataset '{dataset.title}' (id {dataset.id}) as private.\n\n"
-            f"Set up ERDDAP user access for it under \"ERDDAP users\" - unless a custom role was "
-            f"picked, the default is PRIVATE_{dataset.id} (plus ADMIN, which can access every "
-            f"private dataset)."
-        )
-        send_mail(app.mailer, subject, message, sender, recipients)
+        # best-effort: the dataset is already saved at this point regardless
+        # of whether this notification succeeds, so a missing env var or an
+        # unreachable SMTP server shouldn't turn an otherwise-successful save
+        # into a 500
+        try:
+            subject = 'ERDDAP CMS: a dataset was marked private'
+            sender = os.environ['ERDDAP_emailSender']
+            recipients = [os.environ['ERDDAP_emailEverythingTo']]
+            message = (
+                f"Hey admin, user {multiauth.current_user.name or multiauth.current_user.id} just marked "
+                f"dataset '{dataset.title}' (id {dataset.id}) as private.\n\n"
+                f"Set up ERDDAP user access for it under \"ERDDAP users\" - unless a custom role was "
+                f"picked, the default is PRIVATE_{dataset.id} (plus ADMIN, which can access every "
+                f"private dataset)."
+            )
+            send_mail(app.mailer, subject, message, sender, recipients)
+        except Exception as e:
+            logger.exception(e)
 
     return "ok"
 
