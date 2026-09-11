@@ -56,9 +56,9 @@
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div class="d-flex gap-3 text-nowrap">
-              <span class="{% if data.dataset.active %}text-success{% else %}text-danger{% endif %}"><i class="bi bi-{% if data.dataset.active %}check{% else %}x{% endif %}-circle-fill"></i> Enabled</span>
-              <span class="{% if data.dataset.validated %}text-success{% else %}text-danger{% endif %}"><i class="bi bi-{% if data.dataset.validated %}check{% else %}x{% endif %}-circle-fill"></i> Validated</span>
-              <span class="{% if data.dataset.published %}text-success{% else %}text-danger{% endif %}"><i class="bi bi-{% if data.dataset.published %}check{% else %}x{% endif %}-circle-fill"></i> Published</span>
+              <span class="{% if data.dataset.active %}text-success{% else %}text-danger{% endif %}" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="bottom" data-bs-content="Whether this dataset is turned on. A disabled dataset is never shown on ERDDAP, even if published."><i class="bi bi-{% if data.dataset.active %}check{% else %}x{% endif %}-circle-fill"></i> Enabled</span>
+              <span class="{% if data.dataset.validated %}text-success{% else %}text-danger{% endif %}" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="bottom" data-bs-content="Whether the dataset's metadata was last checked and found correct by ERDDAP. Click Validate to check it - you need to do this again after any change, before you can Publish/Reload."><i class="bi bi-{% if data.dataset.validated %}check{% else %}x{% endif %}-circle-fill"></i> Validated</span>
+              <span class="{% if data.dataset.published %}text-success{% else %}text-danger{% endif %}" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="bottom" data-bs-content="Whether this dataset is actually live on ERDDAP right now. It only reflects the last time you clicked Publish/Reload - saved or validated changes aren't visible on ERDDAP until then."><i class="bi bi-{% if data.dataset.published %}check{% else %}x{% endif %}-circle-fill"></i> Published</span>
             </div>
             <div class="d-flex gap-2">
               <button class="btn btn-success" onclick="save('{{ data.id }}')">Save</button>
@@ -71,16 +71,20 @@
               </span>
             </div>
           </div>
+          <div class="form-text">1. <strong>Save</strong> your changes. 2. <strong>Validate</strong> them - ERDDAP checks the metadata is correct. 3. <strong>Publish</strong> (or <strong>Reload</strong>, once already published) to make them live on ERDDAP.</div>
 
           <hr>
 
           <div class="d-flex flex-wrap gap-5">
             {% if data['current_user'].admin %}
+            <div style="max-width: 26rem;">
               <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault" onchange="enableDataset(this, '{{ data.id }}')"
                 {% if data.dataset.active %} checked {% endif %}>
                 <label class="form-check-label" for="flexSwitchCheckDefault">Enable dataset</label>
               </div>
+              <div class="form-text">Turns the dataset on or off on ERDDAP. Disabled datasets are hidden from ERDDAP entirely, even if published - useful while a dataset is still being set up.</div>
+            </div>
             {% endif %}
             {% if 'FromErddap' not in data.dataset.type %}
             <div style="max-width: 26rem;">
