@@ -43,14 +43,18 @@
           </button>
           <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
             <ul class="navbar-nav flex-nowrap">
-              <li class="nav-item d-flex">
                 {% if current_user.is_admin() %}
-                  <a class="text-light link-secondary nav-link p-3 text-nowrap" href="{{ url_for('users') }}" alt="CMS Users"><i class="bi bi-gear-fill"></i> CMS Users</a>
-                  <a class="text-light link-secondary nav-link p-3 text-nowrap" href="{{ url_for('erddap_users') }}" alt="ERDDAP users"><i class="bi bi-key-fill"></i> ERDDAP users</a>
+                  <li class="nav-item">
+                    <a class="text-light link-secondary nav-link p-3 text-nowrap" href="{{ url_for('users') }}" alt="CMS Users"><i class="bi bi-gear-fill"></i> CMS Users</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="text-light link-secondary nav-link p-3 text-nowrap" href="{{ url_for('erddap_users') }}" alt="ERDDAP users"><i class="bi bi-key-fill"></i> ERDDAP users</a>
+                  </li>
                 {% elif current_user.active %}
-                  <a class="text-light link-secondary nav-link p-3" href="{{ url_for('profile') }}" alt="Profile"><i class="bi bi-gear-fill"></i> My profile</a>
+                  <li class="nav-item">
+                    <a class="text-light link-secondary nav-link p-3" href="{{ url_for('profile') }}" alt="Profile"><i class="bi bi-gear-fill"></i> My profile</a>
+                  </li>
                 {% endif %}
-              </li>
               <li class="nav-item">
                 <a class="text-light link-secondary nav-link p-3" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> Logout {{ current_user }}</a>
               </li>

@@ -73,7 +73,10 @@ def get_private_dataset_roles():
             if not accessible_to:
                 continue
             title = dataset_id
-            for att in dataset.get('addAttributes', {}).get('att') or []:
+            # dataset.get('addAttributes') can be None (an empty <addAttributes/>
+            # tag, not a missing one) - "or {}" catches that case too, unlike
+            # .get('addAttributes', {}) which only applies when the key is absent
+            for att in (dataset.get('addAttributes') or {}).get('att') or []:
                 if att.get('@name') == 'title' and att.get('#text'):
                     title = att['#text']
                     break
