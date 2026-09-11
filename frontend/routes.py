@@ -280,7 +280,7 @@ def register():
 
           flash('Registration successful! You can now log in.', 'success')
           #send email
-          subject = 'Hello from ERDDAP CMS!'
+          subject = f'[{ERDDAP_BASE_URL}] Hello from ERDDAP CMS!'
           sender = os.environ['ERDDAP_emailSender']
           recipients = [os.environ['ERDDAP_emailEverythingTo']]
           message = f"Hey admin, user id {user.id} ({user.name or 'email not setted'}) just registered!"

@@ -101,7 +101,7 @@ def save(dataset):
         # unreachable SMTP server shouldn't turn an otherwise-successful save
         # into a 500
         try:
-            subject = 'ERDDAP CMS: a dataset was marked private'
+            subject = f'[{ERDDAP_BASE_URL}] ERDDAP CMS: a dataset was marked private'
             sender = os.environ['ERDDAP_emailSender']
             recipients = [os.environ['ERDDAP_emailEverythingTo']]
             message = (
@@ -248,7 +248,7 @@ def dataset_create_newfromfile():
         if not multiauth.current_user.is_admin():
             multiauth.add_user_to_dataset(multiauth.current_user.id, datasetID)
             #send mail
-            subject = 'Hello from ERDDAP CMS!'
+            subject = f'[{ERDDAP_BASE_URL}] Hello from ERDDAP CMS!'
             sender = os.environ['ERDDAP_emailSender']
             recipients = [os.environ['ERDDAP_emailEverythingTo']]
             message = f"Hey admin, user id {multiauth.current_user.id} ({multiauth.current_user.name or 'email not setted'}) just created a dataset {dataset_name} with id {datasetID}!"
