@@ -19,43 +19,28 @@
     {% endif %}
   {% endwith %}
 
-  <ul class="list-group"> 
-    {% for user in users %}
-      <li class="d-flex justify-content-between align-items-center list-group-item">
-        <div class="d-flex flex-column p-2">
-          <p class="fw-light m-0"><b>Name:</b> {{ user.name or '' }}</p>
-          <p class="fw-light m-0"><b>Email:</b> {{ user.email or '' }}</p>
-          <p class="fw-light m-0"><b>Affiliation:</b> {{ user.affiliation or '' }}</p>
+  {% macro user_card(user, idx) %}
+    {% set collapse_id = "userCollapse" ~ idx %}
+    <div class="card mb-2">
+      <div class="card-header d-flex justify-content-between align-items-center" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#{{ collapse_id }}" aria-expanded="false" aria-controls="{{ collapse_id }}">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <i class="bi bi-chevron-right collapse-chevron"></i>
+          <span class="fw-bold">{{ user.name or user.email or 'Unnamed user' }}</span>
+          <span class="text-muted small">{{ user.email or '' }}</span>
+          <span class="{% if user.active %}text-success{% else %}text-danger{% endif %} small"><i class="bi bi-{% if user.active %}check{% else %}x{% endif %}-circle-fill"></i> {% if user.active %}Active{% else %}Inactive{% endif %}</span>
           {% if user.admin %}
-            <p class="fw-light m-0"><b>Admin: </b><span class="badge bg-success">{{user.admin}}</span></p>
+            <span class="badge bg-secondary">All datasets</span>
           {% else %}
-            <p class="fw-light m-0"><b>Admin: </b><span class="badge bg-danger">{{user.admin}}</span></p>
-          {% endif %}  
-          {% if user.active %}
-            <p class="fw-light m-0"><b>Active: </b><span class="badge bg-success">{{user.active}}</span></p>
-          {% else %}
-            <p class="fw-light m-0"><b>Active: </b><span class="badge bg-danger">{{user.active}}</span></p>
+            <span class="badge bg-secondary">{{ user.permissions.count() }} dataset{{ 's' if user.permissions.count() != 1 else '' }}</span>
           {% endif %}
-          <p class="fw-light m-0"><b>Identities:</b>
-            <ul>{% for identity in user.identities %}
-              <li>{{identity.identifier}}@{{identity.provider}}</li>
-            {% endfor %}
-            </ul>
-          </p>
-          <p class="fw-light m-0"><b>Permissions:</b>
-            <ul>{% for permission in user.permissions %}
-              <li>{{permission.dataset_id}}</li>
-            {% endfor %}
-            </ul>
-          </p>
         </div>
-        <div class="d-flex">
+        <div class="d-flex gap-2" onclick="event.stopPropagation();">
           <a href="{{ url_for('users')}}/{{user.id}}">
-            <button class="btn btn-outline-primary me-4">
+            <button class="btn btn-outline-primary btn-sm">
               <i class="bi bi-pencil"></i>
             </button>
           </a>
-          <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmModal"
+          <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmModal"
             data-bs-title="Confirm deletion"
             data-bs-body="Are you sure you want to delete user <strong>{{user.name}}</strong>?"
             data-bs-url="api/users/delete"
@@ -63,11 +48,84 @@
             >
             <i class="bi bi-trash"></i>
           </button>
-          
-        </div>   
-      </li>
+        </div>
+      </div>
+      <div id="{{ collapse_id }}" class="collapse">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <p class="fw-light m-0"><b>Name:</b> {{ user.name or '' }}</p>
+              <p class="fw-light m-0"><b>Email:</b> {{ user.email or '' }}</p>
+              <p class="fw-light m-0"><b>Affiliation:</b> {{ user.affiliation or '' }}</p>
+              <p class="fw-light m-0"><b>Identities:</b>
+                {% if user.identities %}
+                  <ul>{% for identity in user.identities %}
+                    <li>{{identity.identifier}}@{{identity.provider}}</li>
+                  {% endfor %}
+                  </ul>
+                {% else %} - {% endif %}
+              </p>
+            </div>
+            <div class="col-md-6">
+              <p class="fw-light mb-1"><b>Datasets:</b></p>
+              {% if user.admin %}
+                <span class="text-muted">Admins can access every dataset.</span>
+              {% elif user.permissions.count() %}
+                <ul class="mb-0">
+                  {% for permission in user.permissions %}
+                    <li><a href="{{ url_for('edit', id=permission.dataset_id) }}">{{ dataset_titles.get(permission.dataset_id, permission.dataset_id) }}</a></li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <span class="text-muted">No datasets assigned.</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endmacro %}
+
+  {% set admins = users|selectattr('admin')|list %}
+  {% set non_admins = users|rejectattr('admin')|list %}
+
+  <h5 class="mt-3 mb-2"><i class="bi bi-shield-lock-fill"></i> Admins <span class="badge bg-secondary">{{ admins|length }}</span></h5>
+  {% if admins %}
+    {% for user in admins %}
+      {{ user_card(user, 'admin' ~ loop.index) }}
     {% endfor %}
-  </ul>
+  {% else %}
+    <p class="text-muted">No admin users.</p>
+  {% endif %}
+
+  <h5 class="mt-4 mb-2"><i class="bi bi-people-fill"></i> Users <span class="badge bg-secondary">{{ non_admins|length }}</span></h5>
+  {% if non_admins %}
+    {% for user in non_admins %}
+      {{ user_card(user, 'user' ~ loop.index) }}
+    {% endfor %}
+  {% else %}
+    <p class="text-muted">No non-admin users.</p>
+  {% endif %}
+
   {% include 'common/confirmModal.html' %}
+
+  <style>
+    [data-bs-toggle="collapse"][aria-expanded="true"] .collapse-chevron {
+      transform: rotate(90deg);
+    }
+    .collapse-chevron {
+      transition: transform 0.2s ease;
+    }
+  </style>
+  <script>
+    // keep each card's chevron rotation in sync with its own collapse state
+    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function (header) {
+      const targetId = header.getAttribute('data-bs-target');
+      const target = document.querySelector(targetId);
+      if (!target) return;
+      target.addEventListener('show.bs.collapse', function () { header.setAttribute('aria-expanded', 'true'); });
+      target.addEventListener('hide.bs.collapse', function () { header.setAttribute('aria-expanded', 'false'); });
+    });
+  </script>
 
 {% endblock content %}

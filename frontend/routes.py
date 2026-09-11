@@ -131,7 +131,8 @@ def edit(dataset):
 def users():
   back_path = url_for('index')
   users = multiauth.get_users()
-  return render_template('users.html', users=users, back_path=back_path)
+  dataset_titles = get_dataset_titles()
+  return render_template('users.html', users=users, dataset_titles=dataset_titles, back_path=back_path)
 
 @app.route(f"{URL_PATH}/users/<id>", methods=['GET', 'POST'])
 @multiauth.login_required

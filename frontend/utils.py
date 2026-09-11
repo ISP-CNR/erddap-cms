@@ -89,6 +89,24 @@ def get_private_dataset_roles():
                 roles.append({'role': role, 'dataset_id': dataset_id, 'title': title})
     return roles
 
+def get_dataset_titles():
+    # {dataset_id: title}, for pages that only have a bare dataset_id on hand
+    # (e.g. a Permission row) and want something human-readable to show -
+    # falls back to the id itself if the title can't be read for some reason.
+    titles = {}
+    for dataset_id in get_datasets_id_list():
+        titles[dataset_id] = dataset_id
+        try:
+            with open(join(xmldir, dataset_id + ".xml")) as f:
+                d = xmltodict.parse(f.read(), force_list=FORCE_LIST)
+            for att in (d['dataset'].get('addAttributes') or {}).get('att') or []:
+                if att.get('@name') == 'title' and att.get('#text'):
+                    titles[dataset_id] = att['#text']
+                    break
+        except Exception:
+            continue
+    return titles
+
 def compile_datasets_xml():
     env=os.environ 
     bash_command = "bash /datasets_xml_parts/compile_datasets_xml.sh"
