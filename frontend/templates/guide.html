@@ -58,8 +58,9 @@
         can hold data from <b>many different stations</b>, as long as the file has a column identifying which
         station each row belongs to (e.g. a <code>Station_ID</code> column). The CMS looks for one automatically
         (any column whose name contains "station", e.g. <code>Station_ID</code> or <code>weather_station</code>)
-        and marks it accordingly; if yours isn't picked up, rename it to include "station", or add it manually
-        on the edit page (attribute <code>cf_role="timeseries_id"</code> on that variable).
+        and marks it accordingly. If yours isn't picked up, the fix is to rename the column and re-upload - this
+        particular attribute (<code>cf_role</code>) is locked on the edit page's Simple form for everyone, so it
+        can't be added there; only an admin can set it by hand, via the XML tab.
       </p>
       <p class="card-text text-muted">If the file is a NetCDF file that already declares a supported CF
         featureType, the CMS trusts that over whatever is picked here.</p>
