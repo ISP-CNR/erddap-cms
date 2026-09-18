@@ -99,7 +99,8 @@
         <li><b>Title / Summary</b> - only asked for CSV files, which can't carry them internally.</li>
         <li><b>Creator email</b> - defaults to your own account email.</li>
         <li><b>Info URL</b> - a web page with more information about the dataset or your institution.</li>
-        <li><b>Institution</b> - pick from the list.</li>
+        <li><b>Institution</b> - start typing to search; results come from
+          <a href="https://ror.org" target="_blank">ROR</a>, the public registry of research organizations.</li>
         <li><b>Latitude / Longitude</b> - only shown if the file doesn't already contain valid coordinates.</li>
       </ul>
       <p class="card-text">
@@ -124,10 +125,9 @@
         reasonable defaults - check them rather than assuming they're right for this dataset.
       </p>
       <p class="card-text">
-        For each variable, a <code>standard_name</code> is required where one exists in the
-        <a href="https://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html" target="_blank">CF standard names table</a>
-        (typing in the field offers matching suggestions) - it's what lets ERDDAP and other tools recognize
-        e.g. "this column is sea water temperature" automatically.
+        For each variable, a <code>standard_name</code> is required where one exists - it's what lets ERDDAP and
+        other tools recognize e.g. "this column is sea water temperature" automatically. Start typing in the
+        field to search the CF standard names the CMS bundles (<a href="https://cfconventions.org/Data/cf-standard-names/">CF v1.6</a>).
       </p>
     </div>
   </div>
