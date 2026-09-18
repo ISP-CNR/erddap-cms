@@ -62,22 +62,24 @@
       <p class="card-text">
         "Fixed location" is per station, not per dataset, though - a single Time Series (or Time Series Profile) dataset
         can hold data from <b>many different stations</b>, as long as the file has a column identifying which
-        station each row belongs to (e.g. a <code>Station_ID</code> column), like in this
+        station each row belongs to, like in this
         <a href="{{ url_for('static', filename='examples/multi_station_timeseries_example.csv') }}">example CSV</a>
         (3 stations, 3 rows each - same latitude/longitude repeated for every row of the same station).
-        For a <b>CSV</b>, the CMS looks for that column by name (any column containing "station", e.g.
-        <code>Station_ID</code> or <code>weather_station</code>) and marks it accordingly. If yours isn't picked
-        up, the fix is to rename the column and re-upload - this particular attribute (<code>cf_role</code>) is
-        locked on the edit page's Simple form for everyone, so it can't be added there; only an admin can set it
-        by hand, via the XML tab.
       </p>
       <p class="card-text">
-        A <b>NetCDF</b> file gets an extra, more reliable path: if it already declares a variable with the
-        attribute <code>cf_role="timeseries_id"</code> (e.g. a <code>platform_id</code> variable, whatever it's
-        named), the CMS uses that directly - the name-matching rule above is only a fallback for when the file
-        doesn't declare it. Likewise, if the file already declares a supported CF featureType, the CMS trusts
-        that over whatever dataset type is picked here. Two matching example NetCDF files (same 3-station data as
-        the CSV above) - both validate cleanly on ERDDAP:
+        For a <b>CSV</b>, the CMS decides which column identifies the station by its name: any column containing
+        "station" (e.g. <code>Station_ID</code>). If your station column isn't picked up, the fix is simple:
+        rename it to include "station" and re-upload
+        <i class="bi bi-info-circle" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover focus"
+           data-bs-placement="top" data-bs-content="What actually makes ERDDAP treat a column as &quot;the station&quot; is a marker called cf_role=&quot;timeseries_id&quot; in the dataset's underlying XML definition - the CMS sets it for you based on the column name. It can't be set manually on the edit page (only an admin can, via the XML tab), so renaming and re-uploading is the way to fix it."></i>.
+      </p>
+      <p class="card-text">
+        A <b>NetCDF</b> file gets an extra, more reliable path: if it already declares <code>cf_role="timeseries_id"</code>
+        on some variable natively - whatever it's named, e.g. <code>platform_id</code> - the CMS uses that
+        directly; the name-matching rule above is only a fallback for when the file doesn't declare it already.
+        Likewise, if the file already declares a supported CF featureType, the CMS trusts that over whatever
+        dataset type is picked here. Two matching example NetCDF files (same 3-station data as the CSV above) -
+        both validate cleanly on ERDDAP:
       </p>
       <ul>
         <li><a href="{{ url_for('static', filename='examples/multi_station_no_cfrole_example.nc') }}">without cf_role</a>
