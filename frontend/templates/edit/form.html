@@ -99,7 +99,7 @@
                               {% with field_value=z['#text'],
                                       field_id="axis_varattr_"+var_num+z['@name'],
                                       field_label=z['@name'],
-                                      required=z['@name'] in ['standard_name'],
+                                      required=False,
                                       disabled=z['@name'] in ['cf_role'] %}
                                   {% include 'edit/field.html' %}
                               {% endwith %}                       
@@ -109,7 +109,7 @@
                             {% if z not in atts %}
                                 {% with field_id="axis_varattr_"+var_num+z,
                                         field_label=z,
-                                        required=z in ['standard_name'] %}
+                                        required=False %}
                                     {% include 'edit/field.html' %}
                                 {% endwith %} 
                             {% endif %}
@@ -162,7 +162,7 @@
                               {% with field_value=z['#text'],
                                       field_id="varattr_"+var_num+z['@name'],
                                       field_label=z['@name'],
-                                      required=z['@name'] in ['standard_name'],
+                                      required=False,
                                       disabled=z['@name'] in ['cf_role'] %}
                                   {% include 'edit/field.html' %}
                               {% endwith %}                       
@@ -172,7 +172,7 @@
                             {% if z not in atts %}
                                 {% with field_id="varattr_"+var_num+z,
                                         field_label=z,
-                                        required=z in ['standard_name'] %}
+                                        required=False %}
                                     {% include 'edit/field.html' %}
                                 {% endwith %} 
                             {% endif %}
