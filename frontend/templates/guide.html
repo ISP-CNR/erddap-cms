@@ -126,11 +126,18 @@
       reasonable defaults - check them rather than assuming they're right for this dataset.
     </p>
     <p class="card-text">
-      For each variable, fill in a <code>standard_name</code> where one exists - it's not strictly required, but
-      it's what lets ERDDAP and other tools recognize e.g. "this column is sea water temperature" automatically,
-      so it's worth doing. Start typing in the field to search the CF standard names the CMS bundles
-      (<a href="https://cfconventions.org/Data/cf-standard-names/">CF v1.6</a>).
+      Each variable also has a couple of descriptive attributes worth checking:
     </p>
+    <ul>
+      <li><b>long_name</b> - free text, whatever human-readable label you want (e.g. "Sea Water Temperature").
+        Shown as-is in plots and other tools.</li>
+      <li><b>standard_name</b> - not free text: it's a fixed, machine-readable term from a controlled vocabulary,
+        so other tools can recognize e.g. "this column is sea water temperature" automatically. Start typing in
+        the field to search it - the CMS bundles the
+        <a href="https://cfconventions.org/Data/cf-standard-names/">CF v1.6 standard names table</a>, so only
+        terms from that list are offered, and only variables that actually have a matching one need it filled
+        in. It's not strictly required, but worth doing where one applies.</li>
+    </ul>
   {% endcall %}
 
   {% call step(6, "Private dataset? (optional)", "6") %}
