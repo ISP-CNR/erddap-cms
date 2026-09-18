@@ -10,156 +10,158 @@
     A short walkthrough of the whole process, from uploading a file to seeing the dataset live on ERDDAP.
   </p>
 
-  <div class="card mx-2 mb-3">
-    <div class="card-body">
-      <h5 class="card-title">1. Start the upload</h5>
-      <p class="card-text">
-        From the dataset list, click <span class="badge bg-warning text-dark">Add new dataset</span> (top right),
-        then choose:
-      </p>
-      <ul>
-        <li><b>From existing file</b> - the common case, covered below.</li>
-        <li><b>From another ERDDAP</b> - paste the URL of a dataset already published on a different ERDDAP
-          instance to pull in its existing definition, instead of starting from a raw data file.</li>
-      </ul>
+  {% macro step(num, title, step_id) %}
+    <div class="card mx-2 mb-3">
+      <div class="card-header d-flex align-items-center gap-2" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#step{{ step_id }}" aria-expanded="true" aria-controls="step{{ step_id }}">
+        <i class="bi bi-chevron-down step-chevron"></i>
+        <h5 class="mb-0 fw-bold">{{ num }}. {{ title }}</h5>
+      </div>
+      <div id="step{{ step_id }}" class="collapse show">
+        <div class="card-body">
+          {{ caller() }}
+        </div>
+      </div>
     </div>
-  </div>
+  {% endmacro %}
 
-  <div class="card mx-2 mb-3">
-    <div class="card-body">
-      <h5 class="card-title">2. Upload a file</h5>
-      <p class="card-text">
-        A dataset is built from one or more data files in <code>.csv</code>, <code>.nc</code> (NetCDF-3) or
-        <code>.h5</code> (HDF5) format. Upload one file to start - you can add more to the same dataset later.
-      </p>
-      <ul>
-        <li>Dates/times in a CSV file must use the format <code>yyyy-MM-ddTHH:mm:ssZ</code>.</li>
-        <li>NetCDF/HDF5 files that already carry proper metadata (COARDS/CF/ACDD conventions) need the least
-          manual work afterwards, since the CMS reads titles, variable names and attributes straight from the file.</li>
-        <li>A CSV file has no way to carry a title or summary, so the form asks for those directly when it
-          detects one.</li>
-      </ul>
-    </div>
-  </div>
+  {% call step(1, "Start the upload", "1") %}
+    <p class="card-text">
+      From the dataset list, click <span class="badge bg-warning text-dark">Add new dataset</span> (top right),
+      then choose:
+    </p>
+    <ul>
+      <li><b>From existing file</b> - the common case, covered below.</li>
+      <li><b>From another ERDDAP</b> - paste the URL of a dataset already published on a different ERDDAP
+        instance to pull in its existing definition, instead of starting from a raw data file.</li>
+    </ul>
+  {% endcall %}
 
-  <div class="card mx-2 mb-3">
-    <div class="card-body">
-      <h5 class="card-title">3. Pick the dataset type</h5>
-      <p class="card-text">This tells ERDDAP how to interpret the file's rows/dimensions, and hover each option for its full description:</p>
-      <ul>
-        <li><b>Time Series</b> - repeated measurements over time at a fixed latitude/longitude/depth.</li>
-        <li><b>Time Series Profile</b> - repeated profiles (multiple depths/altitudes) over time at a fixed location.</li>
-        <li><b>Grid</b> - gridded data (e.g. satellite imagery, model output) with regular latitude/longitude/time axes.</li>
-        <li><b>Other</b> - no requirements; use this if the dataset doesn't have latitude, longitude and time
-          variables, or doesn't fit the other options.</li>
-      </ul>
-      <p class="card-text">
-        The common case is the simplest one: one file, one station, a single fixed latitude/longitude for the
-        whole dataset - if that's your data, there's nothing extra to do. If the file has no station column at
-        all, the CMS adds one for you automatically (a <code>station_id</code> variable, visible on the edit
-        page's Simple form) and treats the whole file as one single station.
-      </p>
-      <p class="card-text">
-        "Fixed location" is per station, not per dataset, though - a single Time Series (or Time Series Profile) dataset
-        can hold data from <b>many different stations</b>, as long as the file has a column identifying which
-        station each row belongs to, like in this
-        <a href="{{ url_for('static', filename='examples/multi_station_timeseries_example.csv') }}">example CSV</a>
-        (3 stations, 3 rows each - same latitude/longitude repeated for every row of the same station).
-      </p>
-      <p class="card-text">
-        For a <b>CSV</b>, the CMS decides which column identifies the station by its name: any column containing
-        "station" (e.g. <code>Station_ID</code>). If your station column isn't picked up, the fix is simple:
-        rename it to include "station" and re-upload
-        <i class="bi bi-info-circle" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover focus"
-           data-bs-placement="top" data-bs-content="What actually makes ERDDAP treat a column as &quot;the station&quot; is a marker called cf_role=&quot;timeseries_id&quot; in the dataset's underlying XML definition - the CMS sets it for you based on the column name. It can't be set manually on the edit page (only an admin can, via the XML tab), so renaming and re-uploading is the way to fix it."></i>.
-      </p>
-      <p class="card-text">
-        A <b>NetCDF</b> file gets an extra, more reliable path: if it already declares <code>cf_role="timeseries_id"</code>
-        on some variable natively - whatever it's named, e.g. <code>platform_id</code> - the CMS uses that
-        directly; the name-matching rule above is only a fallback for when the file doesn't declare it already.
-        Likewise, if the file already declares a supported CF featureType, the CMS trusts that over whatever
-        dataset type is picked here. Two matching example NetCDF files (same 3-station data as the CSV above) -
-        both validate cleanly on ERDDAP:
-      </p>
-      <ul>
-        <li><a href="{{ url_for('static', filename='examples/multi_station_no_cfrole_example.nc') }}">without cf_role</a>
-          - a plain <code>station_id</code> variable, picked up by name.</li>
-        <li><a href="{{ url_for('static', filename='examples/multi_station_with_cfrole_example.nc') }}">with cf_role</a>
-          - a <code>platform_id</code> variable that already declares <code>cf_role="timeseries_id"</code>,
-          picked up by attribute despite the non-matching name.</li>
-      </ul>
-    </div>
-  </div>
+  {% call step(2, "Upload a file", "2") %}
+    <p class="card-text">
+      A dataset is built from one or more data files in <code>.csv</code>, <code>.nc</code> (NetCDF-3) or
+      <code>.h5</code> (HDF5) format. Upload one file to start - you can add more to the same dataset later.
+    </p>
+    <ul>
+      <li>Dates/times in a CSV file must use the format <code>yyyy-MM-ddTHH:mm:ssZ</code>.</li>
+      <li>NetCDF/HDF5 files that already carry proper metadata (COARDS/CF/ACDD conventions) need the least
+        manual work afterwards, since the CMS reads titles, variable names and attributes straight from the file.</li>
+      <li>A CSV file has no way to carry a title or summary, so the form asks for those directly when it
+        detects one.</li>
+    </ul>
+  {% endcall %}
 
-  <div class="card mx-2 mb-3">
-    <div class="card-body">
-      <h5 class="card-title">4. Fill in the initial fields</h5>
-      <p class="card-text">A handful of fields are asked for up front:</p>
-      <ul>
-        <li><b>Title / Summary</b> - only asked for CSV files, which can't carry them internally.</li>
-        <li><b>Creator email</b> - defaults to your own account email.</li>
-        <li><b>Info URL</b> - a web page with more information about the dataset or your institution.</li>
-        <li><b>Institution</b> - start typing to search; results come from
-          <a href="https://ror.org" target="_blank">ROR</a>, the public registry of research organizations.</li>
-        <li><b>Latitude / Longitude</b> - only shown if the file doesn't already contain valid coordinates.</li>
-      </ul>
-      <p class="card-text">
-        Click <b>Ok</b> - the CMS reads the file, auto-generates a first draft of the dataset's full metadata
-        (variables, data types, attributes) and creates the dataset. You'll land back on the dataset list, where
-        the new dataset now appears with <span class="text-danger"><i class="bi bi-x-circle-fill"></i> Validated</span>
-        and <span class="text-danger"><i class="bi bi-x-circle-fill"></i> Published</span> - that's expected, the next
-        steps finish the job.
-      </p>
-    </div>
-  </div>
+  {% call step(3, "Pick the dataset type", "3") %}
+    <p class="card-text">This tells ERDDAP how to interpret the file's rows/dimensions, and hover each option for its full description:</p>
+    <ul>
+      <li><b>Time Series</b> - repeated measurements over time at a fixed latitude/longitude/depth.</li>
+      <li><b>Time Series Profile</b> - repeated profiles (multiple depths/altitudes) over time at a fixed location.</li>
+      <li><b>Grid</b> - gridded data (e.g. satellite imagery, model output) with regular latitude/longitude/time axes.</li>
+      <li><b>Other</b> - no requirements; use this if the dataset doesn't have latitude, longitude and time
+        variables, or doesn't fit the other options.</li>
+    </ul>
+    <p class="card-text">
+      The common case is the simplest one: one file, one station, a single fixed latitude/longitude for the
+      whole dataset - if that's your data, there's nothing extra to do. If the file has no station column at
+      all, the CMS adds one for you automatically (a <code>station_id</code> variable, visible on the edit
+      page's Simple form) and treats the whole file as one single station.
+    </p>
+    <p class="card-text">
+      "Fixed location" is per station, not per dataset, though - a single Time Series (or Time Series Profile) dataset
+      can hold data from <b>many different stations</b>, as long as the file has a column identifying which
+      station each row belongs to, like in this
+      <a href="{{ url_for('static', filename='examples/multi_station_timeseries_example.csv') }}">example CSV</a>
+      (3 stations, 3 rows each - same latitude/longitude repeated for every row of the same station).
+    </p>
+    <p class="card-text">
+      For a <b>CSV</b>, the CMS decides which column identifies the station by its name: any column containing
+      "station" (e.g. <code>Station_ID</code>). If your station column isn't picked up, the fix is simple:
+      rename it to include "station" and re-upload
+      <i class="bi bi-info-circle" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover focus"
+         data-bs-placement="top" data-bs-content="What actually makes ERDDAP treat a column as &quot;the station&quot; is a marker called cf_role=&quot;timeseries_id&quot; in the dataset's underlying XML definition - the CMS sets it for you based on the column name. It can't be set manually on the edit page (only an admin can, via the XML tab), so renaming and re-uploading is the way to fix it."></i>.
+    </p>
+    <p class="card-text">
+      A <b>NetCDF</b> file gets an extra, more reliable path: if it already declares <code>cf_role="timeseries_id"</code>
+      on some variable natively - whatever it's named, e.g. <code>platform_id</code> - the CMS uses that
+      directly; the name-matching rule above is only a fallback for when the file doesn't declare it already.
+      Likewise, if the file already declares a supported CF featureType, the CMS trusts that over whatever
+      dataset type is picked here. Two matching example NetCDF files (same 3-station data as the CSV above) -
+      both validate cleanly on ERDDAP:
+    </p>
+    <ul>
+      <li><a href="{{ url_for('static', filename='examples/multi_station_no_cfrole_example.nc') }}">without cf_role</a>
+        - a plain <code>station_id</code> variable, picked up by name.</li>
+      <li><a href="{{ url_for('static', filename='examples/multi_station_with_cfrole_example.nc') }}">with cf_role</a>
+        - a <code>platform_id</code> variable that already declares <code>cf_role="timeseries_id"</code>,
+        picked up by attribute despite the non-matching name.</li>
+    </ul>
+  {% endcall %}
 
-  <div class="card mx-2 mb-3">
-    <div class="card-body">
-      <h5 class="card-title">5. Finish the metadata</h5>
-      <p class="card-text">
-        Open the new dataset (click its name in the list) to reach its edit page. Fields marked with
-        <code>*</code> are required - things like <code>institution</code>, <code>summary</code>,
-        <code>history</code>, <code>Conventions</code>, <code>license</code>, <code>creator_name</code>/
-        <code>creator_email</code>, <code>contributor_name</code>/<code>contributor_email</code>/
-        <code>contributor_institution</code> and <code>standard_name_vocabulary</code>. Most are pre-filled with
-        reasonable defaults - check them rather than assuming they're right for this dataset.
-      </p>
-      <p class="card-text">
-        For each variable, a <code>standard_name</code> is required where one exists - it's what lets ERDDAP and
-        other tools recognize e.g. "this column is sea water temperature" automatically. Start typing in the
-        field to search the CF standard names the CMS bundles (<a href="https://cfconventions.org/Data/cf-standard-names/">CF v1.6</a>).
-      </p>
-    </div>
-  </div>
+  {% call step(4, "Fill in the initial fields", "4") %}
+    <p class="card-text">A handful of fields are asked for up front:</p>
+    <ul>
+      <li><b>Title / Summary</b> - only asked for CSV files, which can't carry them internally.</li>
+      <li><b>Creator email</b> - defaults to your own account email.</li>
+      <li><b>Info URL</b> - a web page with more information about the dataset or your institution.</li>
+      <li><b>Institution</b> - start typing to search; results come from
+        <a href="https://ror.org" target="_blank">ROR</a>, the public registry of research organizations.</li>
+      <li><b>Latitude / Longitude</b> - only shown if the file doesn't already contain valid coordinates.</li>
+    </ul>
+    <p class="card-text">
+      Click <b>Ok</b> - the CMS reads the file, auto-generates a first draft of the dataset's full metadata
+      (variables, data types, attributes) and creates the dataset. You'll land back on the dataset list, where
+      the new dataset now appears with <span class="text-danger"><i class="bi bi-x-circle-fill"></i> Validated</span>
+      and <span class="text-danger"><i class="bi bi-x-circle-fill"></i> Published</span> - that's expected, the next
+      steps finish the job.
+    </p>
+  {% endcall %}
 
-  <div class="card mx-2 mb-3">
-    <div class="card-body">
-      <h5 class="card-title">6. Private dataset? (optional)</h5>
-      <p class="card-text">
-        If the data shouldn't be publicly downloadable yet (e.g. under embargo), toggle
-        <b><i class="bi bi-lock-fill"></i> Private dataset</b> on the edit page before publishing - the title,
-        summary and graphs stay visible to everyone, only the raw data requires a login. This can be changed at
-        any time later.
-      </p>
-    </div>
-  </div>
+  {% call step(5, "Finish the metadata", "5") %}
+    <p class="card-text">
+      Open the new dataset (click its name in the list) to reach its edit page. Fields marked with
+      <code>*</code> are required - things like <code>institution</code>, <code>summary</code>,
+      <code>history</code>, <code>Conventions</code>, <code>license</code>, <code>creator_name</code>/
+      <code>creator_email</code>, <code>contributor_name</code>/<code>contributor_email</code>/
+      <code>contributor_institution</code> and <code>standard_name_vocabulary</code>. Most are pre-filled with
+      reasonable defaults - check them rather than assuming they're right for this dataset.
+    </p>
+    <p class="card-text">
+      For each variable, a <code>standard_name</code> is required where one exists - it's what lets ERDDAP and
+      other tools recognize e.g. "this column is sea water temperature" automatically. Start typing in the
+      field to search the CF standard names the CMS bundles (<a href="https://cfconventions.org/Data/cf-standard-names/">CF v1.6</a>).
+    </p>
+  {% endcall %}
 
-  <div class="card mx-2 mb-3">
-    <div class="card-body">
-      <h5 class="card-title">7. Save, Validate, Publish</h5>
-      <p class="card-text">Same three steps for every change, new dataset or not:</p>
-      <ol>
-        <li><b>Save</b> your changes.</li>
-        <li><b>Validate</b> them - ERDDAP checks the metadata is correct. Fix anything it flags and validate again.</li>
-        <li><b>Publish</b> (or <b>Reload</b>, once already published) to make it live on ERDDAP.</li>
-      </ol>
-      <p class="card-text">
-        Once <span class="text-success"><i class="bi bi-check-circle-fill"></i> Enabled</span>,
-        <span class="text-success"><i class="bi bi-check-circle-fill"></i> Validated</span> and
-        <span class="text-success"><i class="bi bi-check-circle-fill"></i> Published</span> are all green, the
-        dataset is live and reachable on ERDDAP.
-      </p>
-    </div>
-  </div>
+  {% call step(6, "Private dataset? (optional)", "6") %}
+    <p class="card-text">
+      If the data shouldn't be publicly downloadable yet (e.g. under embargo), toggle
+      <b><i class="bi bi-lock-fill"></i> Private dataset</b> on the edit page before publishing - the title,
+      summary and graphs stay visible to everyone, only the raw data requires a login. This can be changed at
+      any time later.
+    </p>
+  {% endcall %}
+
+  {% call step(7, "Save, Validate, Publish", "7") %}
+    <p class="card-text">Same three steps for every change, new dataset or not:</p>
+    <ol>
+      <li><b>Save</b> your changes.</li>
+      <li><b>Validate</b> them - ERDDAP checks the metadata is correct. Fix anything it flags and validate again.</li>
+      <li><b>Publish</b> (or <b>Reload</b>, once already published) to make it live on ERDDAP.</li>
+    </ol>
+    <p class="card-text">
+      Once <span class="text-success"><i class="bi bi-check-circle-fill"></i> Enabled</span>,
+      <span class="text-success"><i class="bi bi-check-circle-fill"></i> Validated</span> and
+      <span class="text-success"><i class="bi bi-check-circle-fill"></i> Published</span> are all green, the
+      dataset is live and reachable on ERDDAP.
+    </p>
+  {% endcall %}
+
+  <style>
+    .step-chevron {
+      transition: transform 0.2s ease;
+    }
+    [data-bs-toggle="collapse"].collapsed .step-chevron {
+      transform: rotate(-90deg);
+    }
+  </style>
 
 {% endblock content %}
