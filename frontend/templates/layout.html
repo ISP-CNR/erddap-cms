@@ -43,6 +43,11 @@
           </button>
           <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
             <ul class="navbar-nav flex-nowrap">
+                {% if current_user.active %}
+                  <li class="nav-item">
+                    <a class="text-light link-secondary nav-link p-3 text-nowrap" href="{{ url_for('guide') }}" alt="Guide"><i class="bi bi-question-circle-fill"></i> Guide</a>
+                  </li>
+                {% endif %}
                 {% if current_user.is_admin() %}
                   <li class="nav-item">
                     <a class="text-light link-secondary nav-link p-3 text-nowrap" href="{{ url_for('users') }}" alt="CMS Users"><i class="bi bi-gear-fill"></i> CMS Users</a>

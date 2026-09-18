@@ -1,0 +1,132 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+  <div class="d-flex flex-row m-2">
+    <h3><i class="bi bi-question-circle-fill"></i> How to add a new dataset</h3>
+  </div>
+
+  <p class="fw-light text-muted px-2">
+    A short walkthrough of the whole process, from uploading a file to seeing the dataset live on ERDDAP.
+  </p>
+
+  <div class="card mx-2 mb-3">
+    <div class="card-body">
+      <h5 class="card-title">1. Start the upload</h5>
+      <p class="card-text">
+        From the dataset list, click <span class="badge bg-warning text-dark">Add new dataset</span> (top right),
+        then choose:
+      </p>
+      <ul>
+        <li><b>From existing file</b> - the common case, covered below.</li>
+        <li><b>From another ERDDAP</b> - paste the URL of a dataset already published on a different ERDDAP
+          instance to pull in its existing definition, instead of starting from a raw data file.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card mx-2 mb-3">
+    <div class="card-body">
+      <h5 class="card-title">2. Upload a file</h5>
+      <p class="card-text">
+        A dataset is built from one or more data files in <code>.csv</code>, <code>.nc</code> (NetCDF-3) or
+        <code>.h5</code> (HDF5) format. Upload one file to start - you can add more to the same dataset later.
+      </p>
+      <ul>
+        <li>Dates/times in a CSV file must use the format <code>yyyy-MM-ddTHH:mm:ssZ</code>.</li>
+        <li>NetCDF/HDF5 files that already carry proper metadata (COARDS/CF/ACDD conventions) need the least
+          manual work afterwards, since the CMS reads titles, variable names and attributes straight from the file.</li>
+        <li>A CSV file has no way to carry a title or summary, so the form asks for those directly when it
+          detects one.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card mx-2 mb-3">
+    <div class="card-body">
+      <h5 class="card-title">3. Pick the dataset type</h5>
+      <p class="card-text">This tells ERDDAP how to interpret the file's rows/dimensions, and hover each option for its full description:</p>
+      <ul>
+        <li><b>Time Series</b> - repeated measurements at one fixed latitude/longitude/depth location.</li>
+        <li><b>Time Series Profile</b> - repeated profiles (multiple depths/altitudes) at one fixed location.</li>
+        <li><b>Grid</b> - gridded data (e.g. satellite imagery, model output) with regular latitude/longitude/time axes.</li>
+        <li><b>Other</b> - no requirements; use this if the dataset doesn't have latitude, longitude and time
+          variables, or doesn't fit the other options.</li>
+      </ul>
+      <p class="card-text text-muted">If the file is a NetCDF file that already declares a supported CF
+        featureType, the CMS trusts that over whatever is picked here.</p>
+    </div>
+  </div>
+
+  <div class="card mx-2 mb-3">
+    <div class="card-body">
+      <h5 class="card-title">4. Fill in the initial fields</h5>
+      <p class="card-text">A handful of fields are asked for up front:</p>
+      <ul>
+        <li><b>Title / Summary</b> - only asked for CSV files, which can't carry them internally.</li>
+        <li><b>Creator email</b> - defaults to your own account email.</li>
+        <li><b>Info URL</b> - a web page with more information about the dataset or your institution.</li>
+        <li><b>Institution</b> - pick from the list.</li>
+        <li><b>Latitude / Longitude</b> - only shown if the file doesn't already contain valid coordinates.</li>
+      </ul>
+      <p class="card-text">
+        Click <b>Ok</b> - the CMS reads the file, auto-generates a first draft of the dataset's full metadata
+        (variables, data types, attributes) and creates the dataset. You'll land back on the dataset list, where
+        the new dataset now appears with <span class="text-danger"><i class="bi bi-x-circle-fill"></i> Validated</span>
+        and <span class="text-danger"><i class="bi bi-x-circle-fill"></i> Published</span> - that's expected, the next
+        steps finish the job.
+      </p>
+    </div>
+  </div>
+
+  <div class="card mx-2 mb-3">
+    <div class="card-body">
+      <h5 class="card-title">5. Finish the metadata</h5>
+      <p class="card-text">
+        Open the new dataset (click its name in the list) to reach its edit page. Fields marked with
+        <code>*</code> are required - things like <code>institution</code>, <code>summary</code>,
+        <code>history</code>, <code>Conventions</code>, <code>license</code>, <code>creator_name</code>/
+        <code>creator_email</code>, <code>contributor_name</code>/<code>contributor_email</code>/
+        <code>contributor_institution</code> and <code>standard_name_vocabulary</code>. Most are pre-filled with
+        reasonable defaults - check them rather than assuming they're right for this dataset.
+      </p>
+      <p class="card-text">
+        For each variable, a <code>standard_name</code> is required where one exists in the
+        <a href="https://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html" target="_blank">CF standard names table</a>
+        (typing in the field offers matching suggestions) - it's what lets ERDDAP and other tools recognize
+        e.g. "this column is sea water temperature" automatically.
+      </p>
+    </div>
+  </div>
+
+  <div class="card mx-2 mb-3">
+    <div class="card-body">
+      <h5 class="card-title">6. Private dataset? (optional)</h5>
+      <p class="card-text">
+        If the data shouldn't be publicly downloadable yet (e.g. under embargo), toggle
+        <b><i class="bi bi-lock-fill"></i> Private dataset</b> on the edit page before publishing - the title,
+        summary and graphs stay visible to everyone, only the raw data requires a login. This can be changed at
+        any time later.
+      </p>
+    </div>
+  </div>
+
+  <div class="card mx-2 mb-3">
+    <div class="card-body">
+      <h5 class="card-title">7. Save, Validate, Publish</h5>
+      <p class="card-text">Same three steps for every change, new dataset or not:</p>
+      <ol>
+        <li><b>Save</b> your changes.</li>
+        <li><b>Validate</b> them - ERDDAP checks the metadata is correct. Fix anything it flags and validate again.</li>
+        <li><b>Publish</b> (or <b>Reload</b>, once already published) to make it live on ERDDAP.</li>
+      </ol>
+      <p class="card-text">
+        Once <span class="text-success"><i class="bi bi-check-circle-fill"></i> Enabled</span>,
+        <span class="text-success"><i class="bi bi-check-circle-fill"></i> Validated</span> and
+        <span class="text-success"><i class="bi bi-check-circle-fill"></i> Published</span> are all green, the
+        dataset is live and reachable on ERDDAP.
+      </p>
+    </div>
+  </div>
+
+{% endblock content %}

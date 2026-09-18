@@ -124,6 +124,13 @@ def edit(dataset):
 
     return render_template('edit.html', data=data, standard_names=standardnames.CF_1_6, back_path=back_path, dashboard_url=DASHBOARD_URL)
 
+@app.route(f"{URL_PATH}/guide")
+@multiauth.login_required
+@multiauth.active_required
+def guide():
+  back_path = url_for('index')
+  return render_template('guide.html', back_path=back_path)
+
 @app.route(f"{URL_PATH}/users")
 @multiauth.login_required
 @multiauth.admin_required
