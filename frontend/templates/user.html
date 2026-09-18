@@ -31,12 +31,12 @@
   <form id="ediUserForm" method="POST">
     {% if (user.identities | selectattr('provider', 'equalto', 'local') | list) %}
     <div class="mb-3">
-      <label for="name" class="form-label">Name</label>
-      <input type="string" class="form-control" id="name" name="name" required="required" value="{{user.name or ''}}">
+      <label for="name" class="form-label">Full name</label>
+      <input type="string" class="form-control" id="name" name="name" placeholder="Mario Rossi" required="required" value="{{user.name or ''}}">
     </div>
     {%else%}
     <div class="mb-3">
-      <label for="name" class="form-label">Name</label>
+      <label for="name" class="form-label">Full name</label>
       <input style="background-color: #d3d3d3 !important;" style="background-color: #d3d3d3 !important;" type="string" class="form-control" id="name" name="name" required="required" value="{{user.name or ''}}" disabled>
     </div>
     {% endif %}
