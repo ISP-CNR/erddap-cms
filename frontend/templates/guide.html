@@ -55,12 +55,9 @@
       </ul>
       <p class="card-text">
         The common case is the simplest one: one file, one station, a single fixed latitude/longitude for the
-        whole dataset - if that's your data, there's nothing extra to do. If the file has no column identifying a
-        station at all, the CMS doesn't complain or ask for one: it synthesizes one automatically, with the same
-        constant value (the dataset's name) on every row - effectively "the whole file is one station" - and the
-        dataset validates and publishes normally. This synthetic <code>station_id</code> variable isn't hidden
-        away in the XML - it shows up as a normal-looking variable card on the edit page's Simple form too,
-        nothing marks it as auto-generated, so don't be surprised to see it there.
+        whole dataset - if that's your data, there's nothing extra to do. If the file has no station column at
+        all, the CMS adds one for you automatically (a <code>station_id</code> variable, visible on the edit
+        page's Simple form) and treats the whole file as one single station.
       </p>
       <p class="card-text">
         "Fixed location" is per station, not per dataset, though - a single Time Series (or Time Series Profile) dataset
