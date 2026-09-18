@@ -122,6 +122,26 @@ def save(dataset):
 @multiauth.active_required
 @multiauth.load_and_authorize_dataset
 def reload(dataset):
+  # a disabled dataset is never actually served by ERDDAP regardless of how
+  # many times it's reloaded - and only an admin can enable one (edit.html)
+  # - so for a non-admin on a disabled dataset, "Publish" can't do anything
+  # useful. Notify an admin to come enable it instead.
+  if not multiauth.current_user.is_admin() and not dataset.active:
+      try:
+          subject = f'[{ERDDAP_BASE_URL}] ERDDAP CMS: a dataset needs to be enabled'
+          sender = os.environ['ERDDAP_emailSender']
+          recipients = [os.environ['ERDDAP_emailEverythingTo']]
+          message = (
+              f"Hey admin, user {multiauth.current_user.name or multiauth.current_user.id} "
+              f"requested that dataset '{dataset.title}' (id {dataset.id}) be published, but it's "
+              f"still disabled and only an admin can enable it.\n\n"
+              f"Enable it under \"Enable dataset\" on the dataset's edit page, then Publish it."
+          )
+          send_mail(app.mailer, subject, message, sender, recipients)
+      except Exception as e:
+          logger.exception(e)
+      return {"requested": True}
+
   cd_output, cd_error = compile_datasets_xml()
   rd_output, rd_error = reload_dataset(dataset.id)
 

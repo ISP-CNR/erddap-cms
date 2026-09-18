@@ -118,6 +118,12 @@ function reload(button,id) {
     document.getElementById('action-button-spinner').classList.add('hide');
     document.getElementById('action-button-text').classList.remove('hide');
     button.disabled = false;
+    if (data.requested) {
+      // dataset is still disabled and only an admin can enable it - nothing
+      // to reload, an email was sent instead (see api.py's reload())
+      showMessageModal("Request sent", "An admin has been notified to enable and publish this dataset.");
+      return;
+    }
     location.reload(true);
   });
 }
