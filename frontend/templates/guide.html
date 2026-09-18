@@ -54,7 +54,11 @@
           variables, or doesn't fit the other options.</li>
       </ul>
       <p class="card-text">
-        "Fixed location" is per station, not per dataset - a single Time Series (or Time Series Profile) dataset
+        The common case is the simplest one: one file, one station, a single fixed latitude/longitude for the
+        whole dataset - if that's your data, there's nothing extra to do, the CMS picks it up as-is.
+      </p>
+      <p class="card-text">
+        "Fixed location" is per station, not per dataset, though - a single Time Series (or Time Series Profile) dataset
         can hold data from <b>many different stations</b>, as long as the file has a column identifying which
         station each row belongs to (e.g. a <code>Station_ID</code> column). The CMS looks for one automatically
         (any column whose name contains "station", e.g. <code>Station_ID</code> or <code>weather_station</code>)
