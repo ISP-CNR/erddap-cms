@@ -321,21 +321,24 @@ function resetIfInvalid(el,rowID){
 
   var options = el.list.options;
   var found=false;
-  
+
   for (var i = 0; i< options.length; i++) {
     if (el.value == options[i].value){
       found=true;
       break;
     }
   }
-      
+
+  var prefix = el.id.startsWith("axis_varattr_") ? "axis_varattr_" : "varattr_";
+  var unitsFieldId = prefix+rowID+"units";
+
   if (found==true){
-    document.querySelector("#var"+rowID+"_attr_units").value = document.getElementById('standard_name_Options').options.namedItem(el.value).getAttribute('data-name');
-    add_field("var"+rowID+"_attr_units");
+    document.getElementById(unitsFieldId).value = document.getElementById('standard_name_Options').options.namedItem(el.value).getAttribute('data-name');
+    add_field(unitsFieldId);
   }else{
-    document.querySelector("#var"+rowID+"_attr_units").value ="";
-    document.querySelector("#var"+rowID+"_attr_units").removeAttribute('readonly');
-    delete_field("var"+rowID+"_attr_units");
+    document.getElementById(unitsFieldId).value ="";
+    document.getElementById(unitsFieldId).removeAttribute('readonly');
+    delete_field(unitsFieldId);
   }
 }
 
