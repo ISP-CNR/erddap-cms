@@ -47,12 +47,20 @@
       <h5 class="card-title">3. Pick the dataset type</h5>
       <p class="card-text">This tells ERDDAP how to interpret the file's rows/dimensions, and hover each option for its full description:</p>
       <ul>
-        <li><b>Time Series</b> - repeated measurements at one fixed latitude/longitude/depth location.</li>
-        <li><b>Time Series Profile</b> - repeated profiles (multiple depths/altitudes) at one fixed location.</li>
+        <li><b>Time Series</b> - repeated measurements over time at a fixed latitude/longitude/depth.</li>
+        <li><b>Time Series Profile</b> - repeated profiles (multiple depths/altitudes) over time at a fixed location.</li>
         <li><b>Grid</b> - gridded data (e.g. satellite imagery, model output) with regular latitude/longitude/time axes.</li>
         <li><b>Other</b> - no requirements; use this if the dataset doesn't have latitude, longitude and time
           variables, or doesn't fit the other options.</li>
       </ul>
+      <p class="card-text">
+        "Fixed location" is per station, not per dataset - a single Time Series (or Time Series Profile) dataset
+        can hold data from <b>many different stations</b>, as long as the file has a column identifying which
+        station each row belongs to (e.g. a <code>Station_ID</code> column). The CMS looks for one automatically
+        (any column whose name contains "station", e.g. <code>Station_ID</code> or <code>weather_station</code>)
+        and marks it accordingly; if yours isn't picked up, rename it to include "station", or add it manually
+        on the edit page (attribute <code>cf_role="timeseries_id"</code> on that variable).
+      </p>
       <p class="card-text text-muted">If the file is a NetCDF file that already declares a supported CF
         featureType, the CMS trusts that over whatever is picked here.</p>
     </div>
