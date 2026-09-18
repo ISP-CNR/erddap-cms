@@ -144,8 +144,8 @@
     <p class="card-text">
       If the data shouldn't be publicly downloadable yet (e.g. under embargo), toggle
       <b><i class="bi bi-lock-fill"></i> Private dataset</b> on the edit page before publishing - the title,
-      summary and graphs stay visible to everyone, only the raw data requires a login. This can be changed at
-      any time later.
+      summary and graphs stay visible to everyone on ERDDAP, only the raw data requires a login. This can be
+      changed at any time later.
     </p>
   {% endcall %}
 
@@ -161,6 +161,12 @@
       <span class="text-success"><i class="bi bi-check-circle-fill"></i> Validated</span> and
       <span class="text-success"><i class="bi bi-check-circle-fill"></i> Published</span> are all green, the
       dataset is live and reachable on ERDDAP.
+    </p>
+    <p class="card-text">
+      A brand new dataset starts out disabled, and only an admin can flip the "Enable dataset" switch - so
+      <span class="text-danger"><i class="bi bi-x-circle-fill"></i> Published</span> will stay red no matter how
+      many times a non-admin clicks Publish, until an admin enables it. Ask an admin to enable your new dataset
+      once it's validated.
     </p>
   {% endcall %}
 
