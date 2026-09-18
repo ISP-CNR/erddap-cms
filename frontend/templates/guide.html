@@ -74,8 +74,16 @@
         attribute <code>cf_role="timeseries_id"</code> (e.g. a <code>platform_id</code> variable, whatever it's
         named), the CMS uses that directly - the name-matching rule above is only a fallback for when the file
         doesn't declare it. Likewise, if the file already declares a supported CF featureType, the CMS trusts
-        that over whatever dataset type is picked here.
+        that over whatever dataset type is picked here. Two matching example NetCDF files (same 3-station data as
+        the CSV above) - both validate cleanly on ERDDAP:
       </p>
+      <ul>
+        <li><a href="{{ url_for('static', filename='examples/multi_station_no_cfrole_example.nc') }}">without cf_role</a>
+          - a plain <code>station_id</code> variable, picked up by name.</li>
+        <li><a href="{{ url_for('static', filename='examples/multi_station_with_cfrole_example.nc') }}">with cf_role</a>
+          - a <code>platform_id</code> variable that already declares <code>cf_role="timeseries_id"</code>,
+          picked up by attribute despite the non-matching name.</li>
+      </ul>
     </div>
   </div>
 
