@@ -60,14 +60,22 @@
       <p class="card-text">
         "Fixed location" is per station, not per dataset, though - a single Time Series (or Time Series Profile) dataset
         can hold data from <b>many different stations</b>, as long as the file has a column identifying which
-        station each row belongs to (e.g. a <code>Station_ID</code> column). The CMS looks for one automatically
-        (any column whose name contains "station", e.g. <code>Station_ID</code> or <code>weather_station</code>)
-        and marks it accordingly. If yours isn't picked up, the fix is to rename the column and re-upload - this
-        particular attribute (<code>cf_role</code>) is locked on the edit page's Simple form for everyone, so it
-        can't be added there; only an admin can set it by hand, via the XML tab.
+        station each row belongs to (e.g. a <code>Station_ID</code> column), like in this
+        <a href="{{ url_for('static', filename='examples/multi_station_timeseries_example.csv') }}">example CSV</a>
+        (3 stations, 3 rows each - same latitude/longitude repeated for every row of the same station).
+        For a <b>CSV</b>, the CMS looks for that column by name (any column containing "station", e.g.
+        <code>Station_ID</code> or <code>weather_station</code>) and marks it accordingly. If yours isn't picked
+        up, the fix is to rename the column and re-upload - this particular attribute (<code>cf_role</code>) is
+        locked on the edit page's Simple form for everyone, so it can't be added there; only an admin can set it
+        by hand, via the XML tab.
       </p>
-      <p class="card-text text-muted">If the file is a NetCDF file that already declares a supported CF
-        featureType, the CMS trusts that over whatever is picked here.</p>
+      <p class="card-text">
+        A <b>NetCDF</b> file gets an extra, more reliable path: if it already declares a variable with the
+        attribute <code>cf_role="timeseries_id"</code> (e.g. a <code>platform_id</code> variable, whatever it's
+        named), the CMS uses that directly - the name-matching rule above is only a fallback for when the file
+        doesn't declare it. Likewise, if the file already declares a supported CF featureType, the CMS trusts
+        that over whatever dataset type is picked here.
+      </p>
     </div>
   </div>
 
