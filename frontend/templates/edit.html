@@ -1,6 +1,8 @@
 {% extends "layout.html" %}
 
 {% block content %}
+  {% include 'common/messageModal.html' %}
+
   <!-- Validate modal -->
   <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-scrollable modal-xl">
@@ -66,7 +68,7 @@
               <span tabindex="0" {% if not data.dataset.validated %} data-bs-toggle="tooltip" data-bs-title="Dataset needs to be valid to be published or reloaded." {% endif %}>
                 <button class="btn btn-secondary" onclick="reload(this,'{{ data.id }}')" {% if not data.dataset.validated %} disabled {% endif %}>
                   <span id="action-button-spinner" class="spinner-border spinner-border-sm hide" role="status" aria-hidden="true"></span>
-                  <span id="action-button-text">{% if data.dataset.published %} Reload {% else %} Publish {% endif %}</span>
+                  <span id="action-button-text">{% if data.dataset.published %} Reload {% elif not data['current_user'].admin and not data.dataset.active %} Request publish {% else %} Publish {% endif %}</span>
                 </button>
               </span>
             </div>
