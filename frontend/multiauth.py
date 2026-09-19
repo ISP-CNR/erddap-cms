@@ -59,6 +59,11 @@ class Dataset(db.Model):
     __tablename__ = 'datasets'
     id = db.Column(db.String, primary_key=True)
     validated = db.Column(db.Boolean, db.ColumnDefault(False))
+    # whether a non-admin already asked an admin to enable+publish this
+    # dataset (see api.py's reload()) - avoids emailing the admin again every
+    # time the same user clicks "Request publish". Reset to False once the
+    # dataset is actually enabled (see api.py's save()).
+    publish_requested = db.Column(db.Boolean, db.ColumnDefault(False))
 
 class ErddapUser(db.Model):
     # A login account for ERDDAP itself (ERDDAP's "custom" authentication,
@@ -172,6 +177,7 @@ def load_and_authorize_dataset(f):
     def wrapper(*args, **kwargs):
         dataset = get_dataset(clean_user_input(request.args.get('id') or request.form.get('id') or request.json.get('id')), current_user)
         dataset.validated = get_dataset_validity(dataset.id)
+        dataset.publish_requested = get_dataset_publish_requested(dataset.id)
         if not dataset:
             abort(401)
         return f(dataset, *args, **kwargs)
@@ -239,6 +245,18 @@ def set_dataset_validity(dataset_id, validated):
         dataset = Dataset(id=dataset_id)
         db.session.add(dataset)
     dataset.validated = validated
+    db.session.commit()
+
+def get_dataset_publish_requested(dataset_id):
+    dataset = Dataset.query.filter_by(id=dataset_id).first()
+    return bool(dataset and dataset.publish_requested)
+
+def set_dataset_publish_requested(dataset_id, requested):
+    dataset = Dataset.query.filter_by(id=dataset_id).first()
+    if not dataset:
+        dataset = Dataset(id=dataset_id)
+        db.session.add(dataset)
+    dataset.publish_requested = requested
     db.session.commit()
 
 def add_user(name, email, password, affiliation, captcha_result):
@@ -358,6 +376,12 @@ multipass.init_app(app)
 db.init_app(app)
 with app.app_context():
     db.create_all()
+    # create_all() only creates missing TABLES, it doesn't ALTER existing
+    # ones - add columns introduced after the table already existed here.
+    db.session.execute(db.text(
+        'ALTER TABLE datasets ADD COLUMN IF NOT EXISTS publish_requested BOOLEAN DEFAULT FALSE'
+    ))
+    db.session.commit()
     if not User.query.filter_by(name='admin').count():
         user = User(name='admin', email='test@example.com', affiliation='CNR', admin=True, active=True)
         identity = Identity(provider='local', identifier='admin', multipass_data='null')

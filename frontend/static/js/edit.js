@@ -117,13 +117,20 @@ function reload(button,id) {
   .then(data => {
     document.getElementById('action-button-spinner').classList.add('hide');
     document.getElementById('action-button-text').classList.remove('hide');
-    button.disabled = false;
     if (data.requested) {
       // dataset is still disabled and only an admin can enable it - nothing
-      // to reload, an email was sent instead (see api.py's reload())
-      showMessageModal("Request sent", "An admin has been notified to enable and publish this dataset.");
+      // to reload, an email was sent instead (see api.py's reload()). Reflect
+      // that here instead of a full page reload, and keep the button
+      // disabled so a non-admin can't spam the request.
+      document.getElementById('action-button-text').innerText = "Publish requested";
+      if (data.already_requested) {
+        showMessageModal("Already requested", "An admin was already notified and hasn't enabled this dataset yet.");
+      } else {
+        showMessageModal("Request sent", "An admin has been notified to enable and publish this dataset. The dataset's creator_email will get an email once it's enabled.");
+      }
       return;
     }
+    button.disabled = false;
     location.reload(true);
   });
 }
