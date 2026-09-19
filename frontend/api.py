@@ -51,6 +51,7 @@ def validate(dataset):
 @multiauth.load_and_authorize_dataset
 def save(dataset):
     was_private = bool(dataset.accessible_to)
+    was_active = dataset.active
 
     filepath = xmldir+"/"+dataset.filename
     filecontent = request.json['text']
@@ -91,9 +92,32 @@ def save(dataset):
     # to set up ERDDAP user access for it (see multiauth.ErddapUser) -
     # nothing else surfaces this otherwise
     try:
-        is_private_now = bool(xmltodict.parse(filecontent, force_list=FORCE_LIST)['dataset'].get('accessibleTo'))
+        new_dataset_dict = xmltodict.parse(filecontent, force_list=FORCE_LIST)['dataset']
+        is_private_now = bool(new_dataset_dict.get('accessibleTo'))
+        is_active_now = new_dataset_dict.get('@active') == 'true'
     except Exception:
         is_private_now = False
+        is_active_now = False
+
+    if is_active_now and not was_active:
+        # let whoever asked for this (via "Request publish") know it happened -
+        # creator_email is what we've got, since the requester might not have
+        # one on file (ORCID/CNR SSO logins don't always expose an email), but
+        # creator_email is a required field on every dataset
+        if multiauth.get_dataset_publish_requested(dataset.id) and dataset.creator_email:
+            try:
+                subject = f'[{ERDDAP_BASE_URL}] ERDDAP CMS: your dataset was enabled'
+                sender = os.environ['ERDDAP_emailSender']
+                message = (
+                    f"Good news - dataset '{dataset.title}' (id {dataset.id}) has been enabled by an admin.\n\n"
+                    f"It still needs to be Published to actually go live on ERDDAP, if it hasn't been already."
+                )
+                send_mail(app.mailer, subject, message, sender, [dataset.creator_email])
+            except Exception as e:
+                logger.exception(e)
+        # a fresh "Request publish" is meaningful again once the dataset is
+        # disabled again in the future
+        multiauth.set_dataset_publish_requested(dataset.id, False)
 
     if is_private_now and not was_private:
         # best-effort: the dataset is already saved at this point regardless
@@ -127,20 +151,23 @@ def reload(dataset):
   # - so for a non-admin on a disabled dataset, "Publish" can't do anything
   # useful. Notify an admin to come enable it instead.
   if not multiauth.current_user.is_admin() and not dataset.active:
-      try:
-          subject = f'[{ERDDAP_BASE_URL}] ERDDAP CMS: a dataset needs to be enabled'
-          sender = os.environ['ERDDAP_emailSender']
-          recipients = [os.environ['ERDDAP_emailEverythingTo']]
-          message = (
-              f"Hey admin, user {multiauth.current_user.name or multiauth.current_user.id} "
-              f"requested that dataset '{dataset.title}' (id {dataset.id}) be published, but it's "
-              f"still disabled and only an admin can enable it.\n\n"
-              f"Enable it under \"Enable dataset\" on the dataset's edit page, then Publish it."
-          )
-          send_mail(app.mailer, subject, message, sender, recipients)
-      except Exception as e:
-          logger.exception(e)
-      return {"requested": True}
+      already_requested = multiauth.get_dataset_publish_requested(dataset.id)
+      if not already_requested:
+          try:
+              subject = f'[{ERDDAP_BASE_URL}] ERDDAP CMS: a dataset needs to be enabled'
+              sender = os.environ['ERDDAP_emailSender']
+              recipients = [os.environ['ERDDAP_emailEverythingTo']]
+              message = (
+                  f"Hey admin, user {multiauth.current_user.name or multiauth.current_user.id} "
+                  f"requested that dataset '{dataset.title}' (id {dataset.id}) be published, but it's "
+                  f"still disabled and only an admin can enable it.\n\n"
+                  f"Enable it under \"Enable dataset\" on the dataset's edit page, then Publish it."
+              )
+              send_mail(app.mailer, subject, message, sender, recipients)
+              multiauth.set_dataset_publish_requested(dataset.id, True)
+          except Exception as e:
+              logger.exception(e)
+      return {"requested": True, "already_requested": already_requested}
 
   cd_output, cd_error = compile_datasets_xml()
   rd_output, rd_error = reload_dataset(dataset.id)

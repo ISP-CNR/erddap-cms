@@ -62,18 +62,30 @@
               <span class="{% if data.dataset.validated %}text-success{% else %}text-danger{% endif %}" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="bottom" data-bs-content="Whether the dataset's metadata was last checked and found correct by ERDDAP. Click Validate to check it - you need to do this again after any change, before you can Publish/Reload."><i class="bi bi-{% if data.dataset.validated %}check{% else %}x{% endif %}-circle-fill"></i> Validated</span>
               <span class="{% if data.dataset.published %}text-success{% else %}text-danger{% endif %}" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="bottom" data-bs-content="Whether this dataset is actually live on ERDDAP right now. It only reflects the last time you clicked Publish/Reload - saved or validated changes aren't visible on ERDDAP until then."><i class="bi bi-{% if data.dataset.published %}check{% else %}x{% endif %}-circle-fill"></i> Published</span>
             </div>
+            {% set pending_admin_action = not data['current_user'].admin and not data.dataset.active %}
             <div class="d-flex gap-2">
               <button class="btn btn-success" onclick="save('{{ data.id }}')">Save</button>
               <button class="btn btn-primary" onclick="validate('{{ data.id }}')">Validate</button>
-              <span tabindex="0" {% if not data.dataset.validated %} data-bs-toggle="tooltip" data-bs-title="Dataset needs to be valid to be published or reloaded." {% endif %}>
-                <button class="btn btn-secondary" onclick="reload(this,'{{ data.id }}')" {% if not data.dataset.validated %} disabled {% endif %}>
+              <span tabindex="0"
+                {% if not data.dataset.validated %} data-bs-toggle="tooltip" data-bs-title="Dataset needs to be valid to be published or reloaded." {% endif %}
+                {% if pending_admin_action and data.dataset.publish_requested %} data-bs-toggle="tooltip" data-bs-title="Already sent - waiting for an admin to enable the dataset." {% endif %}>
+                <button class="btn btn-secondary" onclick="reload(this,'{{ data.id }}')" {% if not data.dataset.validated or (pending_admin_action and data.dataset.publish_requested) %} disabled {% endif %}>
                   <span id="action-button-spinner" class="spinner-border spinner-border-sm hide" role="status" aria-hidden="true"></span>
-                  <span id="action-button-text">{% if data.dataset.published %} Reload {% elif not data['current_user'].admin and not data.dataset.active %} Request publish {% else %} Publish {% endif %}</span>
+                  <span id="action-button-text">{% if data.dataset.published %} Reload {% elif pending_admin_action %}{% if data.dataset.publish_requested %} Publish requested {% else %} Request publish {% endif %}{% else %} Publish {% endif %}</span>
                 </button>
               </span>
             </div>
           </div>
-          <div class="form-text">1. <strong>Save</strong> your changes. 2. <strong>Validate</strong> them - ERDDAP checks the metadata is correct. 3. <strong>Publish</strong> (or <strong>Reload</strong>, once already published) to make them live on ERDDAP.</div>
+          <div class="form-text">
+            1. <strong>Save</strong> your changes. 2. <strong>Validate</strong> them - ERDDAP checks the metadata is correct.
+            3.
+            {% if pending_admin_action %}
+              <strong>Request publish</strong> - since this dataset is still disabled and only an admin can enable it,
+              this notifies one to come do that instead of publishing directly.
+            {% else %}
+              <strong>Publish</strong> (or <strong>Reload</strong>, once already published) to make them live on ERDDAP.
+            {% endif %}
+          </div>
 
           <hr>
 
