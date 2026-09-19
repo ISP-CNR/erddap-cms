@@ -108,9 +108,17 @@ def save(dataset):
             try:
                 subject = f'[{ERDDAP_BASE_URL}] ERDDAP CMS: your dataset was enabled'
                 sender = os.environ['ERDDAP_emailSender']
+                edit_url = f"{ERDDAP_BASE_URL}{URL_PATH}/xml/edit?id={dataset.id}"
                 message = (
-                    f"Good news - dataset '{dataset.title}' (id {dataset.id}) has been enabled by an admin.\n\n"
-                    f"It still needs to be Published to actually go live on ERDDAP, if it hasn't been already."
+                    f"Good news - your dataset has been enabled by an admin, and will be published to ERDDAP "
+                    f"shortly:\n\n"
+                    f"Title: {dataset.title}\n"
+                    f"Dataset ID: {dataset.id}\n"
+                    f"Summary: {dataset.summary}\n"
+                    f"Institution: {dataset.creator_institution}\n"
+                    f"Creator: {dataset.creator_name} <{dataset.creator_email}>\n\n"
+                    f"You can still make changes if needed - click Reload on the dataset's edit page to push "
+                    f"them live right away:\n{edit_url}"
                 )
                 send_mail(app.mailer, subject, message, sender, [dataset.creator_email])
             except Exception as e:
