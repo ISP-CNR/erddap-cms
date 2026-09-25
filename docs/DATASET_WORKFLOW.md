@@ -66,7 +66,7 @@ belongs to (same latitude/longitude repeated for every row of the same station).
 
 - **Title / Summary** - only asked for CSV files, which can't carry them internally.
 - **Creator email** - defaults to the uploader's own account email. This is the address
-  that later receives the "your dataset was enabled" notification (see 2.3), so it should
+  that later receives the "your dataset was enabled" notification (see 2.2), so it should
   be a real, monitored inbox.
 - **Info URL** - a web page with more information about the dataset or the institution.
 - **Institution** - start typing to search; results come from
