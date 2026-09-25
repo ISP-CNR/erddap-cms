@@ -13,7 +13,7 @@ ERDDAP-CMS is web-app that aims to simplify the usage and management of ERDDAP d
   - Management of user permissions on dataset
   - The list of institutions is sourced from the Research Organization Registry (ROR).
 
-Complete documentation is under development.
+See [docs/DATASET_WORKFLOW.md](docs/DATASET_WORKFLOW.md) for the dataset upload/publish workflow. Complete documentation is under development.
 
 ## Development
 
