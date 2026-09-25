@@ -11,7 +11,7 @@ For a more visual, click-by-click walkthrough, logged-in users can also open the
 
 ### 1.1 Start the upload
 
-From the dataset list, click **Add new dataset**, then choose:
+Click **Add new dataset**, then choose:
 
 - **From existing file** - the common case, described below.
 - **From another ERDDAP** - paste the URL of a dataset already published on a different
@@ -177,7 +177,3 @@ via the `accessibleTo` / `graphsAccessibleTo` dataset attributes. Assign roles/u
 private dataset from its edit page; that assignment is what needs to exist before Save +
 Publish/Reload actually restricts the data.
 
-Note the same caveat as in 1.6: toggling privacy or its role assignments only takes
-effect on ERDDAP after Validate + Publish/Reload - Save alone only writes the local XML.
-The edit page shows a warning banner when a private dataset hasn't actually been pushed
-live yet, since an out-of-date `accessibleTo` is a false-sense-of-security risk.
