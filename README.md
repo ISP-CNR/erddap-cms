@@ -19,6 +19,21 @@ ERDDAP-CMS is web-app that aims to simplify the usage and management of ERDDAP d
 
 See [docs/DATASET_WORKFLOW.md](docs/DATASET_WORKFLOW.md) for the dataset upload/publish workflow. Complete documentation is under development.
 
+## Development
+
+ERDDAP-CMS is a Python Flask application and resides in the `frontend/` folder.
+
+To launch it, use the `docker-compose.yml` file by running the command:
+
+`docker compose up -d`
+
+- ERDDAP is available at http://server-host:8080/erddap  
+- ERDDAP-CMS is available at http://server-host:5000/erddap-cms
+
+The default credentials for the admin user in the CMS are:
+- username: `admin`
+- password: `admin`
+
 ## How dataset creation works
 
 Under the hood, each dataset is still just an ERDDAP `<dataset>` XML definition - the CMS automates producing, checking, and maintaining it:
@@ -37,21 +52,6 @@ CMS accounts are separate from ERDDAP's own user system - see [docs/DATASET_WORK
 - **New accounts start inactive.** Registering (captcha-protected) notifies an admin by email, but the account can't do anything until an admin flips it active from the Users page - this is the CMS's approval gate.
 - **Two roles**: admin and regular user. Admins can access and edit every dataset, manage other accounts, and are the only ones who can enable a dataset on ERDDAP (see the "Enable dataset" note in [docs/DATASET_WORKFLOW.md](docs/DATASET_WORKFLOW.md)). Regular users only see/edit datasets they've been explicitly granted access to.
 - **Per-dataset CMS permissions** are separate from ERDDAP's own `accessibleTo` roles used for private datasets - the former controls who can edit a dataset in the CMS, the latter controls who can download its raw data on ERDDAP itself.
-
-## Development
-
-ERDDAP-CMS is a Python Flask application and resides in the `frontend/` folder.
-
-To launch it, use the `docker-compose.yml` file by running the command:
-
-`docker compose up -d`
-
-- ERDDAP is available at http://server-host:8080/erddap  
-- ERDDAP-CMS is available at http://server-host:5000/erddap-cms
-
-The default credentials for the admin user in the CMS are:
-- username: `admin`
-- password: `admin`
 
 ## Miscellaneous
 
