@@ -1,6 +1,6 @@
 # ERDDAP-CMS
 
-ERDDAP is a data server that gives you a simple, consistent way to download subsets of gridded and tabular scientific datasets in common file formats and make graphs and maps.
+ERDDAP™ is a data server that gives you a simple, consistent way to download subsets of gridded and tabular scientific datasets in common file formats and make graphs and maps.
 
 ERDDAP-CMS is web-app that aims to simplify the usage and management of ERDDAP data server. Main features are:
 
