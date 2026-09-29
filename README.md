@@ -19,6 +19,10 @@ ERDDAP-CMS is web-app that aims to simplify the usage and management of ERDDAP d
 
 See [docs/DATASET_WORKFLOW.md](docs/DATASET_WORKFLOW.md) for the dataset upload/publish workflow. Complete documentation is under development.
 
+| Dataset list | Add new dataset | Edit page |
+|---|---|---|
+| ![Dataset list](docs/images/dataset_list.png) | ![Add new dataset](docs/images/add_dataset_form.png) | ![Edit page](docs/images/edit_page.png) |
+
 ## Development
 
 ERDDAP-CMS is a Python Flask application and resides in the `frontend/` folder.
