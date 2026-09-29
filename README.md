@@ -29,6 +29,15 @@ Under the hood, each dataset is still just an ERDDAP `<dataset>` XML definition 
 4. **Validate.** This runs ERDDAP's own `DasDds.sh` script directly against that one dataset's definition - the same check ERDDAP performs when actually loading a dataset - without touching the live `datasets.xml`. Any error ERDDAP reports (missing required attribute, malformed value, etc.) is parsed and shown back in the edit page; the dataset is only marked valid once this succeeds with no errors.
 5. **Publish/Reload.** Concatenates every active dataset's XML file (plus `start.xml`/`end.xml`/`users.xml`) into ERDDAP's single `datasets.xml` and triggers ERDDAP's own reload flag, so it picks up the change without a full server restart.
 
+## How users work
+
+CMS accounts are separate from ERDDAP's own user system - see [docs/DATASET_WORKFLOW.md](docs/DATASET_WORKFLOW.md#2-as-an-admin) for the admin side of managing them. A few things worth knowing:
+
+- **Login** supports multiple providers (local email/password, ORCID, GitHub, CNR - contact us for details), all layered on top of the same account via [Flask-Multipass](https://github.com/indico/flask-multipass).
+- **New accounts start inactive.** Registering (captcha-protected) notifies an admin by email, but the account can't do anything until an admin flips it active from the Users page - this is the CMS's approval gate.
+- **Two roles**: admin and regular user. Admins can access and edit every dataset, manage other accounts, and are the only ones who can enable a dataset on ERDDAP (see the "Enable dataset" note in [docs/DATASET_WORKFLOW.md](docs/DATASET_WORKFLOW.md)). Regular users only see/edit datasets they've been explicitly granted access to.
+- **Per-dataset CMS permissions** are separate from ERDDAP's own `accessibleTo` roles used for private datasets - the former controls who can edit a dataset in the CMS, the latter controls who can download its raw data on ERDDAP itself.
+
 ## Development
 
 ERDDAP-CMS is a Python Flask application and resides in the `frontend/` folder.
