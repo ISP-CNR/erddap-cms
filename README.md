@@ -8,7 +8,7 @@ ERDDAP™ itself manages datasets through a single hand-edited `datasets.xml` fi
 
 ERDDAP-CMS is web-app that aims to simplify the usage and management of ERDDAP data server. Main features are:
 
-  - Upload of new datasets from CSV, netCDF or other ERDDAP instances
+  - Upload of new datasets from CSV, netCDF, h5 or other ERDDAP instances
   - Complete ACDD-based metadata editor
   - Metadata keywords from CF-convention standard names table
   - One-click dataset validation and publication
