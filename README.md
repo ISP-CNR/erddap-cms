@@ -65,8 +65,8 @@ Data is saved inside the docker volume `datasets_data` while datasets configurat
 ## Authors and acknowledgment
 The project main authors are:
 
-  - [Giulio Verazzo, Italian Institute of Polar Sciences](mailto:giulio.verazzo@cnr.it)
   - [Alice Cavaliere, Italian Institute of Polar Sciences](mailto:alice.cavaliere@cnr.it)
+  - [Giulio Verazzo, Italian Institute of Polar Sciences](mailto:giulio.verazzo@cnr.it)
 
 ## License
 This code is licensed under GPLv3
