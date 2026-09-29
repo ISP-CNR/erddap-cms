@@ -4,7 +4,7 @@ ERDDAP™ is a data server that gives you a simple, consistent way to download s
 
 ## Why
 
-ERDDAP itself manages datasets through a single hand-edited `datasets.xml` file plus a command-line tool (`GenerateDatasetsXml`) and a reload flag mechanism - powerful, but it requires ERDDAP-specific expertise and comfort editing raw XML. ERDDAP-CMS was built so that researchers who know their data, not ERDDAP internals, can publish a dataset themselves: upload a file, fill in a web form, and let the CMS handle metadata conventions (ACDD/CF), validation, and per-dataset access control on top of it.
+ERDDAP™ itself manages datasets through a single hand-edited `datasets.xml` file plus a command-line tool (`GenerateDatasetsXml`) and a reload flag mechanism - powerful, but it requires ERDDAP-specific expertise and comfort editing raw XML. ERDDAP-CMS was built so that researchers who know their data, not ERDDAP internals, can publish a dataset themselves: upload a file, fill in a web form, and let the CMS handle metadata conventions (ACDD/CF), validation, and per-dataset access control on top of it.
 
 ERDDAP-CMS is web-app that aims to simplify the usage and management of ERDDAP data server. Main features are:
 
