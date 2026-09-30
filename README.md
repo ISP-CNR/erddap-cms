@@ -2,9 +2,21 @@
 
 [ERDDAP™](https://github.com/ERDDAP/erddap) is a data server that gives you a simple, consistent way to download subsets of gridded and tabular scientific datasets in common file formats and make graphs and maps.
 
+## Table of contents
+
+- [Why](#why)
+- [Development](#development)
+- [How dataset creation works](#how-dataset-creation-works)
+- [How users work](#how-users-work)
+- [Miscellaneous](#miscellaneous)
+- [Authors and acknowledgment](#authors-and-acknowledgment)
+- [License](#license)
+- [Project status](#project-status)
+
+
 ## Why
 
-ERDDAP™ itself manages datasets through a single hand-edited `datasets.xml` file plus a command-line tool (`GenerateDatasetsXml`) and a reload flag mechanism - powerful, but it requires ERDDAP-specific expertise and comfort editing raw XML. ERDDAP-CMS was built so that researchers who know their data, not ERDDAP internals, can publish a dataset themselves: upload a file, fill in a web form, and let the CMS handle metadata conventions (ACDD/CF), validation, and per-dataset access control on top of it.
+ERDDAP™ itself manages datasets through a single hand-edited `datasets.xml` file plus a command-line tool (`GenerateDatasetsXml`) and a reload flag mechanism - powerful, but it requires ERDDAP-specific expertise and comfort editing raw XML. ERDDAP-CMS was built so that researchers who know their data, not ERDDAP internals, can publish a dataset themselves: upload a file, fill in a web form, and let the CMS handle metadata conventions (ACDD/CF), validation, and per-dataset access control on top of it.  By enforcing standard metadata conventions and controlled vocabularies from upload onward, it helps published datasets stay **FAIR** (Findable, Accessible, Interoperable, Reusable) and interoperable with other ERDDAP instances and data infrastructures.
 
 ERDDAP-CMS is web-app that aims to simplify the usage and management of ERDDAP data server. Main features are:
 
