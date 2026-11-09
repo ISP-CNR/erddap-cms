@@ -36,6 +36,7 @@
   <!-- Main content -->
   <div class="d-flex w-100 flex-column">
     <h3 class="fw-bold text-truncate py-1 mx-0">{{ dataset.title }}
+      {% include 'dashboard_button.html' %}
     </h3>
     <p class="fw-light m-0"><b>Filename:</b> {{ dataset.filename}}</p>
     <p class="fw-light m-0"><b>ID:</b> {{ dataset.id}}</p>
@@ -43,8 +44,20 @@
       <p class="fw-light m-0"><b>Active: </b><span class="badge bg-success">{{dataset.active}}</span></p>
     {% else %}
       <p class="fw-light m-0"><b>Active: </b><span class="badge bg-danger">{{dataset.active}}</span></p>
-    {% endif %}    
+    {% endif %}
+    {% if data.expected_columns %}
+      <p class="fw-light mt-2 mb-1">
+        <b>Expected columns ({{ data.expected_columns | length }}):</b>
+        {% for col in data.expected_columns %}<span class="badge bg-secondary me-1">{{ col }}</span>{% endfor %}
+      </p>
+      <p class="fw-light text-muted small m-0">
+        A file you upload should contain these columns (with these exact names) to be included in this dataset's data.
+        A file with none of them will still be accepted, but ERDDAP will treat it as having no data rows.
+      </p>
+    {% endif %}
   </div>
+  <div id="page-upload-warning" class="alert alert-warning d-none" role="alert"></div>
+
   <div class="d-flex flew-row w-100 justify-content-between align-items-center my-3">
     <h4 class="mb-0">{{ data.file_list | length }} File:</h4>
     <button type="button" class="btn btn-primary float-end" data-bs-toggle="modal" data-bs-target="#fileUploadModal">Upload file</button>
@@ -53,9 +66,18 @@
   <ul class="list-group"> 
     {% for file in data.file_list %}
       {% set href_files_show = data.url_path~'/xml/files_show?id='~dataset.id~'&filename='~file %}
+      {% set href_files_download = data.url_path~'/xml/files/download?id='~dataset.id~'&filename='~file %}
       <li class="d-flex justify-content-between align-items-center list-group-item">
-        {{ file }}
+        <div>
+          {{ file }}
+          <div class="text-muted small">Uploaded: {{ data.file_uploaded_at[file] }}</div>
+        </div>
         <div class="d-flex">
+          <a href="{{ href_files_download }}">
+            <button class="btn btn-outline-secondary me-2" title="Download file">
+              <i class="bi bi-download"></i>
+            </button>
+          </a>
           <a href="{{ href_files_show }}">
             <button class="btn btn-outline-primary me-4">
               <i class="bi bi-info"></i>

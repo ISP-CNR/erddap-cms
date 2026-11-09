@@ -39,6 +39,12 @@ See [docs/DATASET_WORKFLOW.md](docs/DATASET_WORKFLOW.md) for the dataset upload/
 
 ERDDAP-CMS is a Python Flask application and resides in the `frontend/` folder.
 
+Files with passwords, keys and OAuth secrets are not in the repository, only a `.example` copy with empty values. Copy each one and fill in the values:
+
+- `.env.example` -> `.env` (database password used by the compose files)
+- `0-dev.env.example` -> `0-dev.env` for development (`1-prod.env.example` and `2-no-multiauth.env.example` for the other setups); `SECRET_KEY` must be a random value, different on every instance
+- `frontend/multipass.cfg.example` -> `frontend/multipass-dev.cfg` (or `-local.cfg` / `-prod.cfg`, see `frontend/main.py`)
+
 To launch it, use the `docker-compose.yml` file by running the command:
 
 `docker compose up -d`

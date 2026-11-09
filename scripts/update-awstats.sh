@@ -1,0 +1,1 @@
+docker exec erddap_awstats awstats_updateall.pl now

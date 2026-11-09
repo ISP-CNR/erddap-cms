@@ -1,4 +1,4 @@
-import os, xmltodict, subprocess, json
+import os, xmltodict, subprocess, json, datetime
 from flask import render_template, request, url_for, redirect, session, abort, flash, send_from_directory,jsonify
 from utils import *
 from main import app, SIMPLE_CAPTCHA
@@ -12,7 +12,9 @@ import xarray as xr
 
 import standardnames
 
+
 from flask_mail import Mail, Message
+
 
 mail = Mail(app)
 
@@ -29,14 +31,34 @@ def index(datasets):
 @app.route(f"{URL_PATH}/xml/files")
 @multiauth.login_required
 @multiauth.active_required
+
 @multiauth.load_and_authorize_dataset
 def files(dataset):
     back_path = url_for('index')
     file_list = get_dataset_files(dataset)
+    expected_columns = dataset.expected_source_names()
 
-    data = { "url_path" : URL_PATH, "file_list": file_list, "id": dataset.id }
+    # the file's mtime - close enough to "when it was uploaded", since these
+    # files are only ever written once (upload) and never edited in place
+    file_uploaded_at = {
+        name: datetime.datetime.fromtimestamp(os.path.getmtime(os.path.join(dataset.files_dir, name))).strftime("%Y-%m-%d %H:%M")
+        for name in file_list
+    }
+
+    data = { "url_path" : URL_PATH, "file_list": file_list, "id": dataset.id, "expected_columns": expected_columns, "file_uploaded_at": file_uploaded_at }
 
     return render_template('files.html', data=data, dataset=dataset, back_path=back_path, dashboard_url=DASHBOARD_URL)
+
+@app.route(f"{URL_PATH}/xml/files/download")
+@multiauth.login_required
+@multiauth.active_required
+@multiauth.load_and_authorize_dataset
+def files_download(dataset):
+    raw_filename = request.args.get('filename')
+    if not raw_filename:
+        abort(400, "Missing 'filename' parameter")
+    filename = clean_user_input(raw_filename)
+    return send_from_directory(dataset.files_dir, filename, as_attachment=True)
 
 @app.route(f"{URL_PATH}/xml/files_show")
 @multiauth.login_required
@@ -73,8 +95,13 @@ def files_show(dataset):
 
     
     
-    desc=df.describe()  
-    
+    desc=df.describe()
+
+    # desc is float64 throughout (from describe()); newer pandas refuses to
+    # implicitly cast the int-as-string 'count' row into a float64 column
+    # ("Invalid value '56' for dtype 'float64'") - widen to object dtype first
+    # so a row of strings can coexist with the other (still-numeric) rows
+    desc = desc.astype(object)
     desc.loc['count'] = desc.loc['count'].astype(int).astype(str)
     
     #df = df.astype(str)
@@ -129,7 +156,7 @@ def edit(dataset):
 @multiauth.active_required
 def guide():
   back_path = url_for('index')
-  return render_template('guide.html', back_path=back_path)
+  return render_template('guide.html', back_path=back_path, erddap_base_url=ERDDAP_BASE_URL)
 
 @app.route(f"{URL_PATH}/users")
 @multiauth.login_required
@@ -292,11 +319,7 @@ def register():
           sender = os.environ['ERDDAP_emailSender']
           recipients = [os.environ['ERDDAP_emailEverythingTo']]
           message = f"Hey admin, user id {user.id} ({user.name or 'email not setted'}) just registered!"
-          
-          try:
-            send_mail(app.mailer, subject, message, sender, recipients)
-          except Exception as e:
-            logger.exception(e)
+          send_mail(app.mailer, subject, message, sender, recipients)
 
           return redirect(url_for('login', provider="local"))
         else:
@@ -312,9 +335,3 @@ def register():
 def static_nc(filename):
   print(filename, file=sys.stderr)
   return send_from_directory('static/nc', filename, as_attachment=True)
-
-
-@app.route("/about")
-def about():
-    back_path = url_for('index')
-    return render_template('about.html', back_path=back_path, dashboard_url=DASHBOARD_URL)

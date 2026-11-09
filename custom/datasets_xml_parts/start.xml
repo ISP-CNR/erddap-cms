@@ -92,7 +92,7 @@ ERDDAP follows
       <ul style="list-style-type: none; margin: 0; padding:0;">
         <li>Brought to you by <a title="CNR - Institute of Polar Sciences" rel="bookmark" href="https://www.isp.cnr.it">CNR-ISP</a></li>
         <li><a title="Manage your datasets" rel="bookmark" href="CMS_URL">Manage your datasets</a></li>
-        <!--<li><a title="Geospatial Catalogue" rel="bookmark" href="GEONETWORK_URL">Metadata Catalogue</a></li>-->
+        <li><a title="Geospatial Catalogue" rel="bookmark" href="GEONETWORK_URL">Metadata Catalogue</a></li>
       </ul>
     </td> 
   </tr> 

@@ -40,10 +40,12 @@ def validate(dataset):
     last_error = blocks[-1] if blocks else error
     successfully = os.stat("/erddapData/logs/DasDds.out").st_size != 0
 
+    error_summary = None if successfully else summarize_validation_error(output)
+
     multiauth.set_dataset_validity(dataset.id, successfully)
 
     # Flask will automatically call Jsonify to trasform this dict into JSON response
-    return { "output": output, "error": error, "successfully": successfully, "relevant_error": last_error} 
+    return { "output": trim_dasdds_startup(output), "error": error, "successfully": successfully, "relevant_error": last_error, "error_summary": error_summary}
 
 @app.route(f"{URL_PATH}/api/dataset/xml/save", methods=['POST'])
 @multiauth.login_required
@@ -56,15 +58,18 @@ def save(dataset):
     filepath = xmldir+"/"+dataset.filename
     filecontent = request.json['text']
 
+    try:
+        new_dataset = xmltodict.parse(filecontent, force_list=FORCE_LIST)['dataset']
+    except Exception:
+        new_dataset = None
+
     if not multiauth.current_user.is_admin():
         # the custom "Accessible to (ERDDAP roles)" field and the
         # "Graphs & metadata are public" checkbox are admin-only in the
         # edit form (edit.html) - enforce that here too, since a non-admin
         # with edit access to this dataset could otherwise POST arbitrary
         # XML directly and set accessibleTo to anything (e.g. "ADMIN")
-        try:
-            new_dataset = xmltodict.parse(filecontent, force_list=FORCE_LIST)['dataset']
-        except Exception:
+        if new_dataset is None:
             return {"error": "Invalid XML"}, 400
 
         new_accessible_to = new_dataset.get('accessibleTo')
@@ -77,6 +82,31 @@ def save(dataset):
             return {"error": "Only admins can restrict graphs/metadata access"}, 403
         if not new_accessible_to and new_graphs:
             return {"error": "graphsAccessibleTo without accessibleTo"}, 403
+
+    if new_dataset is not None:
+        # contributor_name/contributor_email/contributor_institution are
+        # ";"-separated parallel lists (see edit.js's client-side check) -
+        # the ISO19139/GeoNetwork export zips them by index, silently
+        # leaving a blank email/institution for any contributor past the
+        # end of the shorter list, so a mismatch here is a real data-quality
+        # problem for the exported metadata rather than just a cosmetic one
+        def _global_attribute(name):
+            atts = new_dataset.get('addAttributes', {}).get('att', [])
+            match = next((a for a in atts if isinstance(a, dict) and a.get('@name') == name), None)
+            return match.get('#text', '') if match else ''
+
+        def _entry_count(value):
+            return len([v for v in value.split(';') if v.strip()])
+
+        contributor_counts = {
+            field: _entry_count(_global_attribute(field))
+            for field in ('contributor_name', 'contributor_email', 'contributor_institution')
+        }
+        if len(set(contributor_counts.values())) > 1:
+            return {
+                "error": "contributor_name, contributor_email and contributor_institution must have "
+                         f"the same number of ';'-separated entries (got {contributor_counts})"
+            }, 400
 
     # Append two new lines after the filecontent if not already present
     if (filecontent[-1] != '\n'):
@@ -91,11 +121,10 @@ def save(dataset):
     # notify admins the first time a dataset becomes private, so they know
     # to set up ERDDAP user access for it (see multiauth.ErddapUser) -
     # nothing else surfaces this otherwise
-    try:
-        new_dataset_dict = xmltodict.parse(filecontent, force_list=FORCE_LIST)['dataset']
-        is_private_now = bool(new_dataset_dict.get('accessibleTo'))
-        is_active_now = new_dataset_dict.get('@active') == 'true'
-    except Exception:
+    if new_dataset is not None:
+        is_private_now = bool(new_dataset.get('accessibleTo'))
+        is_active_now = new_dataset.get('@active') == 'true'
+    else:
         is_private_now = False
         is_active_now = False
 
@@ -223,6 +252,40 @@ def addvariable(dataset):
     
         return{"result": "ok","message": "test"}
 
+@app.route(f"{URL_PATH}/api/dataset/preview", methods=['POST'])
+@multiauth.login_required
+@multiauth.active_required
+def dataset_preview():
+    if 'file' not in request.files:
+        return {"result": "error", "message": "No file provided"}, 416
+
+    file = request.files['file']
+    filename = clean_user_input(file.filename)
+
+    if not validate_file_extension(filename, app.config['UPLOAD_EXTENSIONS']):
+        return {"result": "error", "message": "File extension not allowed"}, 416
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        temp_filename = f"{tempdir}/{filename}"
+        file.save(temp_filename)
+        strip_utf8_bom(temp_filename)
+        file_size = os.path.getsize(temp_filename)
+
+        try:
+            preview = generate_dataset_preview(temp_filename, file_size)
+        except UnicodeDecodeError as e:
+            # normalize_text_encoding() gives up silently when even its
+            # detected charset can't decode the file (e.g. a binary file
+            # with a misleading .csv extension) - don't leak the raw
+            # codec/byte-offset error to the user in that case
+            logger.exception(e)
+            return {"result": "error", "message": "This file doesn't look like a valid text/CSV file."}, 416
+        except Exception as e:
+            logger.exception(e)
+            return {"result": "error", "message": f"Could not read file: {e}"}, 416
+
+        return {"result": "ok", **preview}
+
 @app.route(f"{URL_PATH}/api/dataset/newfromfile", methods=['POST'])
 @multiauth.login_required
 @multiauth.active_required
@@ -251,6 +314,11 @@ def dataset_create_newfromfile():
     summary = request.form["summary"]
     institution = request.form["institution"]
     infoUrl = request.form["infoUrl"]
+
+    if not institution.strip():
+        return { "result": "error",
+                 "message": "The institution field cannot be empty."
+               }, 416
     cdm_data_type = request.form["cdm_data_type"]
     creator_email = request.form["creator_email"]
     #creator_email = multiauth.current_user.email
@@ -264,6 +332,7 @@ def dataset_create_newfromfile():
 
         temp_filename = f"{tempdir}/{clean_user_input(request.files['file'].filename)}"
         request.files['file'].save(temp_filename)
+        strip_utf8_bom(temp_filename)
 
         # if the NetCDF already declares a supported CF featureType, trust it over
         # the form's cdm_data_type - the file already states what it is
@@ -290,10 +359,11 @@ def dataset_create_newfromfile():
             os.mkdir(dataset_dir)
 
         filename = f"{dataset_dir}/{clean_user_input(request.files['file'].filename) }"
-        
-        # save the file in the dataset folder
-        request.files['file'].seek(0)
-        request.files['file'].save(filename)
+
+        # save the file in the dataset folder - from temp_filename (BOM already
+        # stripped), not the original upload stream, so the file ERDDAP actually
+        # serves matches the charset GenerateDatasetsXml detected and declared
+        shutil.copy(temp_filename, filename)
 
         filepath = xmldir+"/"+datasetID+".xml"
         with open(filepath, 'w') as f:
@@ -307,10 +377,7 @@ def dataset_create_newfromfile():
             sender = os.environ['ERDDAP_emailSender']
             recipients = [os.environ['ERDDAP_emailEverythingTo']]
             message = f"Hey admin, user id {multiauth.current_user.id} ({multiauth.current_user.name or 'email not setted'}) just created a dataset {dataset_name} with id {datasetID}!"
-            try:
-              send_mail(app.mailer, subject, message, sender, recipients)
-            except Exception as e:
-              logger.exception(e)
+            send_mail(app.mailer, subject, message, sender, recipients)
         return { "result" : "ok" }
 
 @app.route(f"{URL_PATH}/api/dataset/delete", methods=['POST'])
@@ -388,9 +455,18 @@ def dataset_file_upload(dataset):
 
     filename = clean_user_input(file.filename)
     app.logger.info(filename)
-    file.save(os.path.join(dataset.files_dir, filename))
-        
-    return { "result": "ok" }
+
+    target_path = os.path.join(dataset.files_dir, filename)
+    if os.path.exists(target_path):
+        return { "result": "error",
+                 "message": f"A file named '{filename}' already exists in this dataset"
+               }, 416
+
+    file.save(target_path)
+
+    warning = check_new_file_matches_dataset_schema(target_path, dataset.expected_source_names())
+
+    return { "result": "ok", "warning": warning }
 
 @app.route(f"{URL_PATH}/api/dataset/file/delete", methods=['POST'])
 @multiauth.login_required
@@ -516,8 +592,8 @@ def dataset_generate_iso19139():
 
   iso_metadata.north_bound_latitude(get_dataset_attribute_from_ERDDAP(dataset.id, 'geospatial_lat') if lat_max is None else lat_max) 
   iso_metadata.south_bound_latitude(get_dataset_attribute_from_ERDDAP(dataset.id, 'geospatial_lat') if lat_min is None else lat_min)
-  iso_metadata.west_bound_longitude(get_dataset_attribute_from_ERDDAP(dataset.id, 'geospatial_lon') if lon_max is None else lon_max)
-  iso_metadata.east_bound_longitude(get_dataset_attribute_from_ERDDAP(dataset.id, 'geospatial_lon') if lon_min is None else lon_min)
+  iso_metadata.west_bound_longitude(get_dataset_attribute_from_ERDDAP(dataset.id, 'geospatial_lon') if lon_min is None else lon_min)
+  iso_metadata.east_bound_longitude(get_dataset_attribute_from_ERDDAP(dataset.id, 'geospatial_lon') if lon_max is None else lon_max)
 
   iso_metadata.begin_time_period(get_dataset_attribute_from_ERDDAP(dataset.id, 'time_coverage_start'))
   iso_metadata.end_time_period(get_dataset_attribute_from_ERDDAP(dataset.id, 'time_coverage_end'))

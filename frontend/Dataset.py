@@ -115,6 +115,23 @@ class Dataset:
         self.publisher_name = self._get_global_attribute('publisher_name')
         self.publisher_url = self._get_global_attribute('publisher_url')
  
+    def expected_source_names(self):
+      # the column/variable names ERDDAP expects in each data file for this
+      # dataset (EDDTableFromAsciiFiles et al. aggregate every file under
+      # fileDir together, so a file with none of these is silently
+      # contributing zero rows - see dataset_file_upload's mismatch check)
+      # a sourceName like ="21" isn't a column name at all - it's ERDDAP's own
+      # syntax for a literal constant value baked into the XML (see
+      # _dropped_scalar_dataVariables), so it's never something a real file
+      # needs to contain
+      data_variables = self.mydict['dataset'].get('dataVariable', [])
+      names = [
+          dv['sourceName'] for dv in data_variables
+          if 'sourceName' in dv and not dv['sourceName'].startswith('="')
+      ]
+      # dict.fromkeys preserves the XML's variable order while dropping duplicates
+      return list(dict.fromkeys(names))
+
     def is_readable(self, user):
       return user.can_read(self.id)
 

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="h-100">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -29,7 +29,6 @@
 
     <title>ERDDAP CMS</title>
   </head>
-  <body class="d-flex flex-column h-100">
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <div class="container-md align-items-center">
@@ -81,36 +80,20 @@
     {% endif %}
 
 
-    <main class="container-sm bg-light rounded flex-grow-1 py-3">
+    <main class="container-sm bg-light rounded p-3">
       {% block content %}{% endblock content %}
     </main>
-    
-    <footer style="min-height: 64px;" class="navbar navbar-expand-lg bg-transparent border-top border-primary-">
-      <div class="container-md">
-        <ul class="navbar-nav">
-          <li class="nav-item">
-            <div class="navbar-text">Brought to you by</div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link text-dark" href="https://www.isp.cnr.it">Italian Institute of Polar Sciences</a>
-          </li>          
-          <li class="nav-item">
-            <a class="nav-link text-dark" href="https://github.com/ISP-CNR/erddap-cms/blob/main/LICENSE">License</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link text-dark" href="https://github.com/ISP-CNR/erddap-cms/blob/main/README.md">About</a>
-          </li>
-          <li>
-            <a class="nav-link text-dark" href="https://github.com/ISP-CNR/erddap-cms">Source code</a>
-          </li>
-          {% if request.endpoint == 'login' %}
-          <li class="nav-item">
-            <div class="navbar-text">CMS version: {{ CMS_VERSION }} &middot; ERDDAP target version: {{ ERDDAP_TARGET_VERSION }}</div>
-          </li>
-          {% endif %}
-        </ul>
-      </div>      
-    </footer>
+
+    {% if request.endpoint == 'login' %}
+      <footer class="text-center text-muted small py-2 border-top bg-white">
+        CMS version: {{ CMS_VERSION }} &middot; ERDDAP target version: {{ ERDDAP_TARGET_VERSION }}
+      </footer>
+    {% elif request.endpoint == 'index' and PUBLISHER_NAME %}
+      <footer class="text-center small py-2 bg-dark text-light">
+        {% if PUBLISHER_URL %}<a href="{{ PUBLISHER_URL }}" target="_blank" class="text-light">{{ PUBLISHER_NAME }}</a>{% else %}{{ PUBLISHER_NAME }}{% endif %}
+        &middot; Developed by ISP-CNR
+      </footer>
+    {% endif %}
 
     <script src="{{ url_for('static', filename='js/bootstrapConfig.js') }}"></script>
   </body>

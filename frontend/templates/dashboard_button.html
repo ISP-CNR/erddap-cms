@@ -1,0 +1,6 @@
+{% if dashboard_url and dataset.active and not dataset.accessible_to %}
+    <a class="btn btn-outline-success btn-sm ms-2 align-self-center" href="{{ dashboard_url }}{{ dataset.id}}" target="_blank">
+        <i class="bi bi-graph-up-arrow" viewBox="0 0 16 16"></i>
+        Dashboard
+    </a>
+{% endif %} 

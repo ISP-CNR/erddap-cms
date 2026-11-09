@@ -1,0 +1,97 @@
+services:
+  db:
+    image: postgres:15
+    container_name: isp-erddap-db
+    environment:
+      POSTGRES_USER: erddap
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    #ports:
+    #    - "127.0.0.1:5439:5432"
+    healthcheck:
+      test: pg_isready -d erddap -U erddap
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+    volumes:
+      - pg_data:/var/lib/postgresql/data:rw
+    restart: always
+    networks:
+      - internal
+
+  erddap-cms:
+    build:
+      context: ./
+      target: prod
+    container_name: erddap-cms
+    restart: always
+    platform: linux/amd64
+    env_file: 1-prod.env
+    environment:
+      TOMCAT_USER_ID: "1500"
+      TOMCAT_GROUP_ID: "1500"
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.network=http
+
+      ## ERDDAP ##
+      - traefik.http.routers.isp-erddap.rule=Host(`example.org`) && PathPrefix(`/erddap`)
+      - traefik.http.routers.isp-erddap.tls=true
+      - traefik.http.routers.isp-erddap.tls.certresolver=lets-encrypt
+
+      - traefik.http.routers.isp-erddap.service=isp-erddap
+      - traefik.http.routers.isp-erddap.middlewares=isp-erddap-middleware
+
+      - traefik.http.services.isp-erddap.loadbalancer.server.port=8080
+      - traefik.http.middlewares.isp-erddap-middleware.stripprefix.forceSlash=true
+
+      ## CMS ##
+      - traefik.http.routers.isp-erddap-cms.rule=Host(`example.org`) && PathPrefix(`/erddap-cms`)
+      - traefik.http.routers.isp-erddap-cms.tls=true
+      - traefik.http.routers.isp-erddap-cms.tls.certresolver=lets-encrypt
+
+      - traefik.http.routers.isp-erddap-cms.service=isp-erddap-cms
+      - traefik.http.routers.isp-erddap-cms.middlewares=isp-erddap-cms-middleware
+
+      - traefik.http.middlewares.isp-erddap-cms-middleware.stripprefix.forceSlash=true
+      - traefik.http.services.isp-erddap-cms.loadbalancer.server.port=5000
+      
+    volumes: 
+      - erddap_data:/erddapData:rw
+      - ./custom/datasets.xml:/usr/local/tomcat/content/erddap/datasets.xml:rw
+      - ./custom/logo.png:/usr/local/tomcat/content/erddap/images/logo.png:rw
+      - ./datasets_data:/datasets_data:rw
+      - ./custom/setup.xml:/usr/local/tomcat/content/erddap/setup.xml
+      #- ./custom/mysql-connector-java.jar:/usr/local/tomcat/webapps/erddap/WEB-INF/lib/mysql-connector-java.jar:rw
+      - ./custom/server.xml:/usr/local/tomcat/conf/server.xml:rw
+      #- ./custom/ssl:/usr/local/tomcat/ssl
+      
+      - ./custom/datasets_xml_parts:/datasets_xml_parts
+
+      # save logs to nas
+      - /nas/logs/erddap-isp:/usr/local/tomcat/logs
+    
+    logging:
+      driver: local
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+    networks:
+      - http
+      - internal
+
+networks:
+  http:
+    external: true
+  internal:
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
+
+volumes:
+  pg_data:
+  erddap_data:

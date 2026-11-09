@@ -39,6 +39,43 @@ async function isFileValid(file) {
   return  { file: file, isValid: true, message: "File is valid"};
 }
 
+/*
+function getMimeType(file) {
+  return new Promise((resolve, reject) => {
+    const fileReader = new FileReader();
+
+    fileReader.onloadend = function (event) {
+      let mimeType = '';
+
+      const arr = new Uint8Array(event.target.result).subarray(0, 8);
+      let header = '';
+
+      for (let i = 0; i < arr.length; i++) {
+        header += arr[i].toString(16).padStart(2, '0');
+      }
+      console.log(header);
+      console.log(file.type);
+      switch (header) {
+        case '43444601': // NetCDF (CDF)
+          mimeType = 'application/x-netcdf';
+          break;
+
+        case '894844460d0a1a0a': // HDF5
+          mimeType = 'application/x-hdf5';
+          break;
+
+        default:
+          mimeType = file.type;
+          break;
+      }
+
+      resolve(mimeType);
+    };
+
+    fileReader.readAsArrayBuffer(file);
+  });
+}
+*/
 function getMimeType(file) {
   return new Promise((resolve) => {
     const fileReader = new FileReader();
@@ -69,7 +106,6 @@ function getMimeType(file) {
     fileReader.readAsArrayBuffer(file);
   });
 }
-
 
 // UI Classes
 

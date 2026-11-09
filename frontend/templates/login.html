@@ -41,21 +41,28 @@
             </form>
             <div class="text-center mb-2">No account? <a href="{{ url_for('register') }}">Register here</a></div>
 
-            {% if OAUTH == "True" %}
+            {% if NO_MULTIAUTH == "False" %}
 
               <p class="fw-semibold text-center">- or -</p>
-              <div class="text-center">
+              <!--div class="text-center">
+              
                 <a class="btn btn-block btn-social btn-github"  href="{{ url_for('login', provider="github", next=next) }}">
                   <span class="fab fa-github"></span> Sign in with GitHub 
                 </a>
-              </div>
+                
+    
+              </div-->
               <div class="text-center mt-2">
                 <a class="btn btn-block btn-social" style="background-color:  #447405  !important; color:white;"   href="{{ url_for('login', provider="orcid", next=next) }}">
                   <span class="fab fa-orcid header-orcid-fab"></span> Sign in with ORCID 
                 
                 </a>
+                <div class="text-center mt-2 ">
+                  <a class="btn btn-block btn-social" style="background-color:  #19365e  !important; color:white;"   href="{{ url_for('login', provider="cnr", next=next) }}">
+                    <span class="far fa-id-badge"></span> Sign in with CNR 
+                  
+                  </a>  
               </div>
-
             {% endif %}
 
             {% else %}

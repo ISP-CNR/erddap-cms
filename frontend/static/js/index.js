@@ -11,7 +11,7 @@ $(document).ready( function () {
       },
       scrollCollapse: true,
       scrollY: '70vh',  
-      pageLength : 20,
+      pageLength : 10,
       lengthMenu: [10, 20, 50],
       fixedHeader: {
         footer: true,
@@ -56,15 +56,125 @@ function datasetNameInputOnChange(input) {
   document.getElementById('btn-add-new-dataset').disabled = !(input.value != "");   
 }
 
+function escapeHtml(text){
+  var div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// file validity and the preview's checks are decided by two independent async
+// calls - the submit button only unlocks once both have reported a green result
+var fileIsValid = false;
+var previewChecksPassed = false;
+
+function updateSubmitButtonState(){
+  var ready = fileIsValid && previewChecksPassed;
+  btnFileUpload.disabled = !ready;
+  document.getElementById('dataset-form-rest').classList.toggle('d-none', !ready);
+}
+
+function loadFilePreview(file){
+  var previewBlock = document.getElementById('file-preview-block');
+  var previewLoading = document.getElementById('file-preview-loading');
+  var errorBlock = document.getElementById('file-preview-error');
+  var contentBlock = document.getElementById('file-preview-content');
+
+  previewChecksPassed = false;
+  updateSubmitButtonState();
+
+  previewBlock.classList.remove('d-none');
+  previewLoading.classList.remove('d-none');
+  errorBlock.classList.add('d-none');
+  contentBlock.classList.add('d-none');
+  document.getElementById('file-preview-success').classList.add('d-none');
+
+  var formData = new FormData();
+  formData.append('file', file);
+
+  // the request is often near-instant on a local file, which makes the spinner
+  // flash by too fast to register as "checks are running" - hold it for a
+  // minimum stretch so the preliminary-checks step reads as a real step
+  var MIN_LOADING_MS = 1200;
+  var minDelay = new Promise(function(resolve){ setTimeout(resolve, MIN_LOADING_MS); });
+
+  Promise.all([
+    fetch(`${URL_PATH}/api/dataset/preview`, { method: 'POST', body: formData })
+      .then(function(response){
+        return response.json().then(function(data){ return { ok: response.ok, data: data }; });
+      }),
+    minDelay
+  ]).then(function(results){
+    var result = results[0];
+    previewLoading.classList.add('d-none');
+
+    if(!result.ok || result.data.result !== 'ok'){
+      errorBlock.textContent = result.data.message || 'Could not preview this file.';
+      errorBlock.classList.remove('d-none');
+      previewChecksPassed = false;
+      updateSubmitButtonState();
+      return;
+    }
+
+    var data = result.data;
+    document.getElementById('file-preview-summary').textContent =
+      data.filename + ' · ' + data.row_count + ' rows · ' + data.column_count + ' columns · ' + data.file_size;
+
+    var checksBlock = document.getElementById('file-preview-checks');
+    checksBlock.innerHTML = '';
+    (data.checks || []).filter(function(c){ return c.applicable !== false; }).forEach(function(c){
+      var item = document.createElement('span');
+      item.className = c.passed ? 'text-success' : 'text-danger';
+      item.innerHTML = (c.passed ? '✓ ' : '✗ ') + escapeHtml(c.label);
+      checksBlock.appendChild(item);
+    });
+
+    var warningsBlock = document.getElementById('file-preview-warnings');
+    warningsBlock.innerHTML = '';
+    (data.warnings || []).forEach(function(w){
+      var alertDiv = document.createElement('div');
+      alertDiv.className = 'alert alert-danger py-1 px-2';
+      alertDiv.textContent = w.message;
+      warningsBlock.appendChild(alertDiv);
+    });
+
+    var head = document.getElementById('file-preview-table-head');
+    head.innerHTML = data.columns.map(function(c){ return '<th>' + escapeHtml(c) + '</th>'; }).join('');
+
+    var body = document.getElementById('file-preview-table-body');
+    body.innerHTML = data.rows.map(function(row){
+      return '<tr>' + row.map(function(cell){ return '<td>' + escapeHtml(String(cell)) + '</td>'; }).join('') + '</tr>';
+    }).join('');
+
+    contentBlock.classList.remove('d-none');
+    previewChecksPassed = !!data.all_checks_passed;
+    document.getElementById('file-preview-success').classList.toggle('d-none', !previewChecksPassed);
+    updateSubmitButtonState();
+  }).catch(function(){
+    previewLoading.classList.add('d-none');
+    errorBlock.textContent = 'Could not preview this file.';
+    errorBlock.classList.remove('d-none');
+    previewChecksPassed = false;
+    updateSubmitButtonState();
+  });
+}
+
 function checkNewDatasetfromFile(){
 var file = document.getElementById('file');
 
 fileUploadAlert.hide();
 btnCloseModal.disabled = true;
-btnFileUpload.disabled = true;
+fileIsValid = false;
+previewChecksPassed = false;
+updateSubmitButtonState();
 btnFileCloseModal.disabled = true;
 loadingBlock.setMessage("Checking file...");
 loadingBlock.show();
+
+if(file.files.length){
+  loadFilePreview(file.files[0]);
+} else {
+  document.getElementById('file-preview-block').classList.add('d-none');
+}
 
 // Check file validity
 isFileValid(file.files[0]).then(result => {
@@ -72,11 +182,13 @@ isFileValid(file.files[0]).then(result => {
     // the file is not valid, show the alert
     fileUploadAlert.setMessage(result.message);
     fileUploadAlert.show();
+    fileIsValid = false;
   } else {
     // the file is valid, can be uploaded.
-    btnFileUpload.disabled = false;
+    fileIsValid = true;
     fileUploadAlert.hide();
   }
+  updateSubmitButtonState();
   loadingBlock.hide();
   btnFileCloseModal.disabled = false;
   btnCloseModal.disabled = false;

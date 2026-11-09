@@ -299,6 +299,8 @@ def get_user_provider(id):
     identity=Identity.query.filter_by(user_id=id).first()
     return identity.provider    
 
+
+
 def update_user(user, new_password):
     if user.name == "":
         return "Empty name"
@@ -382,7 +384,14 @@ with app.app_context():
         'ALTER TABLE datasets ADD COLUMN IF NOT EXISTS publish_requested BOOLEAN DEFAULT FALSE'
     ))
     db.session.commit()
-    if not User.query.filter_by(name='admin').count():
+    # Guard on the actual login identifier, not the User's display name - a
+    # deployment's "admin" login can belong to a User whose name is anything
+    # (e.g. a real person's name), so checking name='admin' here doesn't
+    # reliably detect that this identity already exists. Doing so meant this
+    # block re-ran on every startup on such a deployment, trying to insert a
+    # second Identity with the same identifier and crashing every worker on
+    # the identities_identifier_key unique constraint.
+    if not Identity.query.filter_by(provider='local', identifier='admin').count():
         user = User(name='admin', email='test@example.com', affiliation='CNR', admin=True, active=True)
         identity = Identity(provider='local', identifier='admin', multipass_data='null')
         identity.password = scrypt.hash('admin')

@@ -1,0 +1,46 @@
+services:
+
+  db:
+    image: postgres:latest
+    container_name: isp-erddap-db
+    environment:
+      POSTGRES_USER: erddap
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: pg_isready -d erddap -U erddap
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+    ports:
+        - "127.0.0.1:5437:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data:rw
+    restart: always
+
+
+  erddap-cms:
+    build:
+      context: ./
+      target: no-multiauth
+    container_name: erddap-cms
+    ports:
+      - 8080:8080 #erddap 
+      - 5000:5000 #cms
+      - 5678:5678 #debugger
+    restart: always
+    platform: linux/amd64
+    env_file: 2-no-multiauth.env      
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes: 
+      - erddap_data:/erddapData:rw
+      #- ./custom/datasets.xml:/usr/local/tomcat/content/erddap/datasets.xml:rw
+      - ./custom/logo.png:/usr/local/tomcat/content/erddap/images/logo.png:rw #logo for erddap
+      #- ./datasets_data:/datasets_data:rw
+      #- ./tomcat_logs:/usr/local/tomcat/logs:rw
+
+volumes:
+  pg_data:
+  erddap_data:

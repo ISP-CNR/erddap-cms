@@ -7,6 +7,10 @@ $(document).ready(() => {
       valueField: 'name', // the key of JSON response to take as value
       labelField: 'name', // the key of the JSON response to take as label
       maxItems: maxItems,
+      // contributor_institution has one entry per contributor, in the same
+      // order as contributor_name, so several can share the same institute
+      duplicates: maxItems === null,
+      hideSelected: false,
       searchField: [],
       load: function(query, callback) {
         if (!query.length) return callback();

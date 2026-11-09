@@ -1,0 +1,85 @@
+# Register your test application here: https://github.com/settings/applications/
+
+_orcid_oauth_config = {
+    'client_id': '',  # put your client id here
+    'client_secret': '',  # put your client secret here
+    'authorize_url': 'https://orcid.org/oauth/authorize',
+    'access_token_url': 'https://orcid.org/oauth/token',
+    'scope':'/authenticate',
+    'userinfo_endpoint': 'https://orcid.org/oauth/userinfo'
+}
+
+_cnr_oauth_config = {
+    'client_id': '',  # put your client id here
+    'client_secret': '',  # put your client secret here
+    'authorize_url': 'https://sso.cnr.it/auth/realms/cnr-only/protocol/openid-connect/auth',
+    'access_token_url': 'https://sso.cnr.it/auth/realms/cnr-only/protocol/openid-connect/token',
+    'userinfo_endpoint': 'https://sso.cnr.it/auth/realms/cnr-only/protocol/openid-connect/userinfo',
+}
+
+
+
+MULTIPASS_AUTH_PROVIDERS = {
+    'orcid': {
+        'type': 'authlib',
+        'title': 'Orcid',
+        'authlib_args': _orcid_oauth_config
+    },
+    'cnr': {
+        'type': 'authlib',
+        'title': 'CNR',
+        'authlib_args': _cnr_oauth_config
+    },
+
+    'local': {
+        'type': 'localdb',
+        'title': 'Local',
+    },
+}
+
+MULTIPASS_IDENTITY_PROVIDERS = {
+    'local': {
+        'type': 'localdb',
+    },
+       'orcid': {
+        'type': 'authlib',
+        'title': 'Orcid',
+	'mapping':{
+	'first_name':'given_name',
+	'surname':'family_name'
+
+	}
+        
+     
+    },
+       'cnr': {
+        'type': 'authlib',
+        'title': 'CNR',
+        
+     
+    }
+}
+
+
+MULTIPASS_PROVIDER_MAP = {
+    # You can also be explicit (only needed for more complex links)
+    'local': 'local',
+ 
+    'orcid': [
+        {
+            'identity_provider': 'orcid'
+        }
+    ],
+    'cnr': [
+        {
+            'identity_provider': 'cnr'
+        }
+    ]
+
+}
+
+MULTIPASS_LOGIN_FORM_TEMPLATE = 'login.html'
+MULTIPASS_LOGIN_SELECTOR_TEMPLATE = 'login.html'
+MULTIPASS_IDENTITY_INFO_KEYS = ['email', 'name','first_name','surname','affiliation']
+SQLALCHEMY_DATABASE_URI = 'postgresql://USER:PASSWORD@db:5432/DBNAME'
+MULTIPASS_HIDE_NO_SUCH_USER = True

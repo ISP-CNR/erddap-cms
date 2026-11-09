@@ -1,0 +1,1 @@
+docker exec -it isp-erddap-cms tail -f /var/www/html/frontend/logs/flask.log

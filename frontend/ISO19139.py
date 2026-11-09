@@ -114,7 +114,7 @@ class ISO19139:
                 "gmd:role": {
                     "gmd:CI_RoleCode": {
                         "@codeList": "http://standards.iso.org/iso/19139/resources/gmxCodelists.xml#CI_RoleCode",
-                        "@codeListValue": "pointOfContact"
+                        "@codeListValue": "author"
                     }
                 }
             }

@@ -42,12 +42,28 @@
       <code>.h5</code> (HDF5) format. Upload one file to start - you can add more to the same dataset later.
     </p>
     <ul>
-      <li>Dates/times in a CSV file must use the format <code>yyyy-MM-ddTHH:mm:ssZ</code>.</li>
+      <li>Dates/times in a CSV file must use ISO 8601 (<code>yyyy-MM-ddTHH:mm:ssZ</code>), or a truncation of
+        it from the end - down to just <code>yyyy-MM-dd</code> for date-only data with no time of day.</li>
       <li>NetCDF/HDF5 files that already carry proper metadata (COARDS/CF/ACDD conventions) need the least
         manual work afterwards, since the CMS reads titles, variable names and attributes straight from the file.</li>
-      <li>A CSV file has no way to carry a title or summary, so the form asks for those directly when it
-        detects one.</li>
+      <li>A CSV file has no way to carry a title or summary internally, so the form asks for those directly
+        when the uploaded file is a CSV.</li>
     </ul>
+    <p class="card-text">
+      As soon as you pick a file, the CMS shows a quick preview with a few automatic checks on it:
+    </p>
+    <ul>
+      <li>At least 3 data rows.</li>
+      <li>No duplicate column names.</li>
+      <li>Exactly one recognizable time/date column (its name should contain "time" or "date").</li>
+      <li>Decimal numbers use '.' as the separator, not ','.</li>
+      <li>Date/time columns use ISO 8601, or a truncation of it down to <code>yyyy-MM-dd</code>.</li>
+    </ul>
+    <p class="card-text">
+      These only apply to CSV files - a NetCDF/HDF5 file skips straight to the preview table, since it
+      already carries proper types and doesn't need them. Fix anything flagged and re-select the file to
+      check again; all checks need to pass before you can continue.
+    </p>
   {% endcall %}
 
   {% call step(3, "Pick the dataset type", "3") %}
@@ -126,9 +142,23 @@
       reasonable defaults - check them rather than assuming they're right for this dataset.
     </p>
     <p class="card-text">
-      Each variable also has a couple of descriptive attributes worth checking:
+      Each variable is shown as its own card, labelled with its <b>destinationName</b> - the name ERDDAP
+      actually serves it under, normally the same as its column/variable name in the source file. A few
+      fields are worth checking on every one:
     </p>
     <ul>
+      <li><b>dataType</b> - the variable's data type (<code>int</code>, <code>byte</code>, <code>float</code>,
+        <code>double</code> or <code>String</code>), picked automatically from the file. Get this wrong (e.g.
+        <code>int</code> for a value that actually needs decimals) and the data gets silently truncated or
+        rounded when ERDDAP serves it.</li>
+      <li><b>units</b> - free text for the variable's physical unit (e.g. "degree_C", "m s-1"). Shown as-is in
+        plots and file downloads, so it should follow a convention tools can parse - see the
+        <a href="{{ erddap_base_url }}/erddap/convert/units.html">UDUNITS2</a> syntax ERDDAP expects.
+        Picking a <b>standard_name</b> below fills this in automatically with that term's canonical unit, so
+        it's usually worth setting standard_name first.</li>
+      <li><b>_FillValue</b> - the value used in the data itself to mean "no data here" (e.g. <code>-999</code>
+        or <code>NaN</code>). If this doesn't match what's actually in the file, missing values won't be
+        recognized as missing - they'll show up as real (wrong) data points instead.</li>
       <li><b>long_name</b> - free text, whatever human-readable label you want (e.g. "Sea Water Temperature").
         Shown as-is in plots and other tools.</li>
       <li><b>standard_name</b> - not free text: it's a fixed, machine-readable term from a controlled vocabulary,
@@ -154,18 +184,20 @@
     <ol>
       <li><b>Save</b> your changes.</li>
       <li><b>Validate</b> them - ERDDAP checks the metadata is correct. Fix anything it flags and validate again.</li>
-      <li><b>Publish</b> (or <b>Reload</b>, once already published) to make it live on ERDDAP.</li>
+      <li>Click <b>Request publish</b> (or <b>Reload</b>, once the dataset's been enabled to push your
+        changes live on ERDDAP), see below for what each one actually does.</li>
     </ol>
+    <p class="card-text">
+      Your brand new dataset starts out disabled, though, and only an admin can enable one - so at first, that
+      third button reads <b>Request publish</b>: clicking it doesn't actually publish anything yet, it just
+      notifies an admin to come enable the dataset. You'll get an email once they do, and from then on the
+      button reads <b>Reload</b> instead, and really does push your changes live.
+    </p>
     <p class="card-text">
       Once <span class="text-success"><i class="bi bi-check-circle-fill"></i> Enabled</span>,
       <span class="text-success"><i class="bi bi-check-circle-fill"></i> Validated</span> and
       <span class="text-success"><i class="bi bi-check-circle-fill"></i> Published</span> are all green, the
       dataset is live and reachable on ERDDAP.
-    </p>
-    <p class="card-text">
-      A brand new dataset starts out disabled, and only an admin can "Enable dataset". If you're not an admin,
-      once the dataset is validated the button reads <b>Request publish</b> instead of Publish - clicking it
-      notifies an admin to come enable it. The dataset's creator gets an email once an admin enables it.
     </p>
   {% endcall %}
 
@@ -177,5 +209,29 @@
       transform: rotate(-90deg);
     }
   </style>
+
+  <script>
+    // linking to a specific step (e.g. from the edit page's "More in the guide"
+    // links) should open just that step and collapse the rest, instead of
+    // leaving every step expanded like a normal visit to this page does
+    document.addEventListener('DOMContentLoaded', function () {
+      var hash = window.location.hash;
+      if (!hash || !hash.startsWith('#step')) {
+        return;
+      }
+      document.querySelectorAll('.card-header[data-bs-target]').forEach(function (header) {
+        var target = document.querySelector(header.getAttribute('data-bs-target'));
+        if (!target) {
+          return;
+        }
+        var isTarget = '#' + target.id === hash;
+        new bootstrap.Collapse(target, { toggle: false })[isTarget ? 'show' : 'hide']();
+      });
+      var targetEl = document.querySelector(hash);
+      if (targetEl) {
+        targetEl.scrollIntoView({ block: 'start' });
+      }
+    });
+  </script>
 
 {% endblock content %}

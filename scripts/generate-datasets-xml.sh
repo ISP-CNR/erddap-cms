@@ -1,0 +1,1 @@
+docker exec -it isp-erddap-cms bash -c "/datasets_xml_parts/compile_datasets_xml.sh"

@@ -13,7 +13,9 @@ import urllib3
 import io
 import time
 import netCDF4 as nc
+import xarray as xr
 import pandas as pd
+import numpy as np
 import re
 from enum import Enum
 from erddapy import ERDDAP
@@ -201,6 +203,261 @@ def find_delimiter(filename):
         delimiter = sniffer.sniff(fp.read(8000)).delimiter
     return delimiter
 
+UTF8_BOM = b'\xef\xbb\xbf'
+
+def strip_utf8_bom(filename):
+    # a UTF-8 BOM (e.g. from "CSV UTF-8" exports in Excel) is invisible and harmless to
+    # pandas, but GenerateDatasetsXml's charset auto-detection reports it as "UTF-8-SIG",
+    # which Java doesn't recognize as a valid encoding name - strip it before either the
+    # preview or the real GenerateDatasetsXml run ever sees the file
+    with open(filename, 'rb') as f:
+        content = f.read()
+    if content.startswith(UTF8_BOM):
+        with open(filename, 'wb') as f:
+            f.write(content[len(UTF8_BOM):])
+
+def human_readable_size(num_bytes):
+    size = float(num_bytes)
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size < 1024 or unit == 'GB':
+            return f"{size:.0f} {unit}" if unit == 'B' else f"{size:.1f} {unit}"
+        size /= 1024
+
+DECIMAL_COMMA_RE = re.compile(r'^-?\d+,\d+$')
+# ERDDAP's own ISO 8601 time parser accepts truncating the full
+# yyyy-MM-ddTHH:mm:ssZ string from the end - you can drop Z, then :ss, then
+# :mm, then :HH, then T, in that order - down to a bare yyyy-MM-dd for
+# date-only data (see ERDDAP's advancedSearchTimeTooltip). Match the same
+# rule here instead of only accepting the full form.
+DATE_TIME_RE = re.compile(r'^\d{4}-\d{2}-\d{2}(T\d{2}(:\d{2}(:\d{2}Z?)?)?)?$')
+WARNING_SCAN_ROWS = 100
+
+def check_decimal_separator(df):
+    warnings = []
+    for col in df.columns:
+        values = df[col].dropna().astype(str).head(WARNING_SCAN_ROWS)
+        bad_value = next((v for v in values if DECIMAL_COMMA_RE.match(v.strip())), None)
+        if bad_value is not None:
+            warnings.append({
+                "column": str(col),
+                "message": f"Column '{col}' looks like it uses ',' as the decimal separator (e.g. '{bad_value}'). ERDDAP expects '.' (e.g. '{bad_value.replace(',', '.')}')."
+            })
+    return warnings
+
+def check_duplicate_columns(filename, delimiter):
+    # pandas silently dedupes repeated header names itself (temperature, temperature.1)
+    # before we ever see df.columns, so this has to look at the raw header line - a
+    # duplicate reaches GenerateDatasetsXml as a hard failure ("Duplicate column names")
+    with open(filename, newline='') as f:
+        header_line = f.readline()
+    raw_columns = next(csv.reader([header_line], delimiter=delimiter))
+    counts = {}
+    for name in raw_columns:
+        counts[name] = counts.get(name, 0) + 1
+    duplicates = [name for name, count in counts.items() if count > 1]
+    if duplicates:
+        return [{
+            "column": ", ".join(duplicates),
+            "message": f"Duplicate column name(s): {', '.join(duplicates)}. Each column needs a unique name."
+        }]
+    return []
+
+def find_time_columns(df):
+    return [col for col in df.columns if 'time' in str(col).lower() or 'date' in str(col).lower()]
+
+def check_date_format(df, time_columns):
+    warnings = []
+    for col in time_columns:
+        values = df[col].dropna().astype(str).head(WARNING_SCAN_ROWS)
+        bad_value = next((v for v in values if not DATE_TIME_RE.match(v.strip())), None)
+        if bad_value is not None:
+            warnings.append({
+                "column": str(col),
+                "message": f"Column '{col}' should use the ISO 8601 format yyyy-MM-ddTHH:mm:ssZ (or a truncation of it, down to yyyy-MM-dd for date-only data), but found a value like '{bad_value}'."
+            })
+    return warnings
+
+def check_time_column_presence(time_columns):
+    if len(time_columns) == 0:
+        return [{
+            "column": None,
+            "message": "No column looks like a time/date column (its name should contain 'time' or 'date'). ERDDAP datasets need a recognizable time column."
+        }]
+    if len(time_columns) > 1:
+        return [{
+            "column": ", ".join(str(c) for c in time_columns),
+            "message": f"Multiple columns look like a time/date column: {', '.join(str(c) for c in time_columns)}. It should be clear which one is the actual time variable."
+        }]
+    return []
+
+MIN_DATA_ROWS = 3
+
+def check_minimum_rows(row_count):
+    # check_header_csv (called for real, unprotected, by _build_args_for_ascii when the
+    # dataset is actually created) needs at least this many data rows or it raises an
+    # IndexError - catch it here first so the preview can say so plainly
+    if row_count < MIN_DATA_ROWS:
+        return [{
+            "column": None,
+            "message": f"The file has only {row_count} data row{'s' if row_count != 1 else ''}. At least {MIN_DATA_ROWS} are needed to generate the dataset."
+        }]
+    return []
+
+def build_checks(*named_warning_lists):
+    # each entry is (id, label, warnings) or (id, label, warnings, applicable) - one
+    # checklist item per check, "passed" when that check found nothing to warn about.
+    # applicable=False (e.g. no time column to check the date format of) means the
+    # check had nothing to run against - shown as neutral rather than a false "passed"
+    checks = []
+    for entry in named_warning_lists:
+        check_id, label, warnings = entry[0], entry[1], entry[2]
+        applicable = entry[3] if len(entry) > 3 else True
+        checks.append({
+            "id": check_id, "label": label, "warnings": warnings,
+            "applicable": applicable, "passed": applicable and len(warnings) == 0,
+        })
+    all_passed = all(c["passed"] or not c["applicable"] for c in checks)
+    all_warnings = [w for c in checks for w in c["warnings"]]
+    return checks, all_passed, all_warnings
+
+def normalize_text_encoding(filename):
+    # the real upload path (_build_args_for_ascii) detects the file's charset
+    # with chardet and passes it straight to GenerateDatasetsXml, so a
+    # non-UTF-8 file (e.g. Windows-1252/Latin-1 from an Excel export) is
+    # handled correctly there - but every preview helper below (find_delimiter,
+    # check_header_csv, pandas.read_csv, ...) opens the file with the default
+    # encoding and would hard-crash on it. Re-write the preview's temp copy as
+    # UTF-8 upfront so the rest of the preview code doesn't need to care; this
+    # never touches the real uploaded file, only the preview's own temp copy.
+    with open(filename, 'rb') as f:
+        raw = f.read()
+    detected = chardet.detect(raw)['encoding'] or 'utf-8'
+    try:
+        text = raw.decode(detected)
+    except (UnicodeDecodeError, LookupError):
+        return
+    if detected.lower().replace('-', '') not in ('utf8', 'ascii'):
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(text)
+
+def preview_csv(filename, file_size):
+    normalize_text_encoding(filename)
+    delimiter = find_delimiter(filename)
+
+    try:
+        # same detection GenerateDatasetsXml itself relies on (see check_header_csv):
+        # a second row that's all units (e.g. "degrees_north") reads with a different
+        # dtype per column than the row below it - too few data rows to compare falls
+        # back to "no units row" rather than erroring the whole preview
+        has_units_row = check_header_csv(filename, delimiter) == 3
+    except Exception:
+        has_units_row = False
+
+    # count logical CSV records, not physical lines - a quoted field with an
+    # embedded newline (e.g. a free-text notes column) spans multiple physical
+    # lines but is still a single row
+    with open(filename, newline='') as f:
+        total_rows = sum(1 for _ in csv.reader(f, delimiter=delimiter))
+    row_count = total_rows - (2 if has_units_row else 1)  # exclude header (+units row)
+
+    sample_df = pd.read_csv(filename, sep=delimiter, skiprows=[1] if has_units_row else None, nrows=WARNING_SCAN_ROWS)
+
+    time_columns = find_time_columns(sample_df)
+    checks, all_passed, warnings = build_checks(
+        ("minimum_rows", f"At least {MIN_DATA_ROWS} data rows", check_minimum_rows(row_count)),
+        ("duplicate_columns", "No duplicate column names", check_duplicate_columns(filename, delimiter)),
+        ("time_column", "Exactly one recognizable time/date column", check_time_column_presence(time_columns)),
+        ("decimal_separator", "Decimal separator uses '.'", check_decimal_separator(sample_df)),
+        ("date_format", "Date/time columns use ISO 8601 (yyyy-MM-ddTHH:mm:ssZ, or a truncation of it)", check_date_format(sample_df, time_columns), len(time_columns) > 0),
+    )
+
+    preview_df = sample_df.head(5)
+    return {
+        "filename": os.path.basename(filename),
+        "row_count": max(row_count, 0),
+        "column_count": len(preview_df.columns),
+        "file_size": human_readable_size(file_size),
+        "columns": [str(c) for c in preview_df.columns],
+        # astype(str) alone leaves NaN as a bare float (not the string "nan"),
+        # which json.dumps then emits as the non-standard, unparseable token
+        # `NaN` - blank it out first so every cell serializes as a plain string
+        "rows": preview_df.astype(object).where(preview_df.notnull(), "").astype(str).values.tolist(),
+        "warnings": warnings,
+        "checks": checks,
+        "all_checks_passed": all_passed,
+    }
+
+def preview_netcdf(filename, file_size):
+    # xarray's to_dataframe() broadcasts scalar/fixed-value variables (e.g.
+    # latitude/longitude on a single-station dataset) across every row,
+    # instead of netCDF4's raw indexing which only has a value for row 0 and
+    # leaves every other row blank for anything not shaped like the main
+    # dimension - also handles plain HDF5 (.h5) files the same way as NetCDF,
+    # picking whichever backend engine actually reads the file.
+    ds = xr.open_dataset(filename)
+    try:
+        df = ds.to_dataframe().reset_index()
+        row_count = len(df)
+        preview_df = df.head(5)
+        # stringifying a float32 column (via astype(object)) widens each value
+        # to a Python float first, showing the full float64 expansion of
+        # whatever the float32 actually is (e.g. 14.100000381469727 or, for
+        # larger magnitudes where float32's precision step is coarser,
+        # 79.099998) - a fixed-decimals round() doesn't work for every
+        # magnitude (6 decimals cleans up 14.1 but not 79.1). Format each
+        # value with numpy's own shortest round-trip repr for its actual
+        # float32 precision instead, same as plain str(numpy.float32(x)) uses.
+        float_cols = preview_df.select_dtypes(include="float32").columns
+        for col in float_cols:
+            preview_df[col] = preview_df[col].apply(
+                lambda v: np.format_float_positional(np.float32(v), unique=True, fractional=False, trim="-")
+                if pd.notnull(v) else v
+            )
+
+        return {
+            "filename": os.path.basename(filename),
+            "row_count": row_count,
+            "column_count": len(preview_df.columns),
+            "file_size": human_readable_size(file_size),
+            "columns": [str(c) for c in preview_df.columns],
+            "rows": preview_df.astype(object).where(preview_df.notnull(), "").astype(str).values.tolist(),
+            "warnings": [],
+            "checks": [],
+            "all_checks_passed": True,
+        }
+    finally:
+        ds.close()
+
+def generate_dataset_preview(filename, file_size):
+    with open(filename, "rb") as f:
+        is_nc = f.read(4) in [b'\x89HDF', b'CDF\x01', b'CDF\x02']
+    if is_nc:
+        return preview_netcdf(filename, file_size)
+    return preview_csv(filename, file_size)
+
+def check_new_file_matches_dataset_schema(filename, expected_source_names):
+    # EDDTableFromAsciiFiles aggregates every file under fileDir together at read
+    # time (see the guide's "how does ERDDAP handle multi files" note) - a file
+    # with none of the expected column names doesn't error, it just silently
+    # contributes zero rows, which looks like a successful upload to the user
+    if not expected_source_names or not filename.lower().endswith('.csv'):
+        return None
+    try:
+        delimiter = find_delimiter(filename)
+        with open(filename) as f:
+            header_line = f.readline()
+        header_columns = set(next(csv.reader([header_line], delimiter=delimiter)))
+    except Exception:
+        return None
+
+    if not (header_columns & set(expected_source_names)):
+        return (
+            f"This file's columns ({', '.join(sorted(header_columns))}) don't match "
+            f"this dataset's expected columns ({', '.join(sorted(expected_source_names))}). "
+            "The file was uploaded, but ERDDAP will treat it as having no data rows."
+        )
+    return None
+
 def clean_user_input(value):
     return secure_filename(value)
 
@@ -302,6 +559,14 @@ def _detect_eddtype(filename, cdm_data_type):
     return "EDDGridFromNcFiles" if cdm_data_type == "Grid" else "EDDTableFromMultidimNcFiles"
 
 def _build_args_for_ascii(filename, infoUrl, institution, summary, title):
+    # find_delimiter/check_header_csv below open the file with the default
+    # (UTF-8) encoding and hard-crash on anything else (e.g. a Windows-1252
+    # CSV with a '‰' in the units row) - normalize to UTF-8 first, same fix
+    # as the preview uses. Safe to do before the chardet detection a few
+    # lines down: that now correctly detects "utf-8", matching what's
+    # actually on disk, including in the copy that ends up saved as the
+    # dataset's permanent file.
+    normalize_text_encoding(filename)
     delimiter = find_delimiter(filename)
     first_data_row = check_header_csv(filename, delimiter)
 
@@ -698,6 +963,95 @@ def split_asterisks_blocks(lines):
     if lines and last != len(lines) - 1:
         results.append("\n".join(lines[last:]))
     return results
+
+DASDDS_START_MARKER = "*** Starting DasDds"
+# ERDDAP encodes a fixed-value sourceName into a safe column name when it logs
+# it, e.g. ="45" becomes x3dx2245x22
+ENCODED_FIXED_VALUE_RE = re.compile(r'"(x3d[^"]*)"')
+ENCODED_CHAR_RE = re.compile(r'x([0-9a-f]{2})')
+DASDDS_LOAD_FAILED_MARKER = "An error occurred while trying to load"
+DUPLICATE_SOURCE_NAME_RE = re.compile(r'Duplicate column names: .* are both "(.*)"')
+FIXED_VALUE_HINT = " If these are latitude and longitude, they have the same value: check the coordinates."
+# (regex on a log line, title, hint): the failures a CMS user can act on, as
+# observed running DasDds on broken datasets (ERDDAP 2.31.1). A {} in the title
+# is the regex's first group.
+KNOWN_VALIDATION_ERRORS = [
+    (DUPLICATE_SOURCE_NAME_RE,
+     "Two variables have the same sourceName: {}",
+     "ERDDAP needs every sourceName to be different."),
+    (re.compile(r'Duplicate dataVariableDestinationNames: .* are both "(.*)"'),
+     "Two variables have the same destinationName: {}",
+     "ERDDAP needs every destinationName to be different."),
+    (re.compile(r'^(0) files found in '),
+     "No data files found",
+     "Upload at least one data file for this dataset."),
+    (re.compile(r'No valid data files were found'),
+     "No valid data files",
+     "ERDDAP couldn't read any data from the files: check they aren't empty, and check columnNamesRow and firstDataRow."),
+    (re.compile(r"dataVariable\[timeIndex=\d+\] isn't an EDVTime"),
+     "The time variable has invalid units",
+     "Check the units of the time variable: they must describe the format of the times in the file, e.g. yyyy-MM-dd'T'HH:mm:ssZ."),
+    (re.compile(r'Unknown <sortFilesBySourceNames> name#\d+="(.*)"'),
+     "sortFilesBySourceNames names an unknown variable: {}",
+     "Use the sourceName of one of the dataset's variables."),
+    (re.compile(r'"units" MUST be "m"'),
+     "The altitude variable must be in meters",
+     "Set its units to m, using scale_factor to convert the values if needed, or use a different destinationName."),
+    (re.compile(r'SAXParseException'),
+     "The XML isn't well formed",
+     "The line number refers to datasets.xml, which is compiled from all datasets, so the broken XML could also be in another dataset."),
+]
+
+def trim_dasdds_startup(output):
+    # everything before the marker is JVM/logback/EDStatic startup noise,
+    # unrelated to the dataset being validated
+    start = output.find(DASDDS_START_MARKER)
+    return output[start:] if start != -1 else output
+
+def decode_erddap_names(line):
+    def decode_char(match):
+        char = chr(int(match.group(1), 16))
+        return char if char.isprintable() else match.group(0)
+
+    return ENCODED_FIXED_VALUE_RE.sub(
+        lambda match: f'"{ENCODED_CHAR_RE.sub(decode_char, match.group(1))}"',
+        line
+    )
+
+def summarize_validation_error(output):
+    # when a dataset fails to load, ERDDAP logs the cause and DasDds then
+    # crashes with a NullPointerException on the missing dataset, so what
+    # follows the "load failed" marker is only a consequence and the cause is
+    # the last line before it. Only a failure while parsing datasets.xml reports
+    # its cause after the marker. Most causes have no ERROR prefix.
+    # Returns None if the log doesn't have this shape.
+    lines = [l.strip() for l in output.splitlines() if l.strip()]
+    marker = next((i for i, l in enumerate(lines) if DASDDS_LOAD_FAILED_MARKER in l), None)
+    if marker is None:
+        return None
+
+    after = lines[marker + 1] if marker + 1 < len(lines) else ""
+    if after and '"edd" is null' not in after:
+        candidates = [after]
+    else:
+        candidates = lines[max(0, marker - 6):marker][::-1]
+    if not candidates or candidates[0].startswith("at "):
+        return None
+
+    candidates = [decode_erddap_names(l) for l in candidates]
+    summary = {"title": None, "line": candidates[0], "hint": None}
+
+    for regex, title, hint in KNOWN_VALIDATION_ERRORS:
+        for line in candidates:
+            match = regex.search(line)
+            if match:
+                name = match.group(1) if regex.groups else ""
+                summary.update(line=line, title=title.format(name), hint=hint)
+                if regex is DUPLICATE_SOURCE_NAME_RE and name.startswith("="):
+                    summary["hint"] += FIXED_VALUE_HINT
+                return summary
+
+    return summary
 
 published_erddap_datasets_cache = None
 def get_published_erddap_datasets():

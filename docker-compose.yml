@@ -1,17 +1,19 @@
 services:
 
   db:
-    image: postgres:latest
-    container_name: erddap-cms-db
+    image: postgres:16
+    container_name: isp-erddap-db
     environment:
       POSTGRES_USER: erddap
-      POSTGRES_PASSWORD: erddap
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     healthcheck:
       test: pg_isready -d erddap -U erddap
       interval: 30s
       timeout: 60s
       retries: 5
       start_period: 80s
+    ports:
+        - "5437:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data:rw
     restart: always
@@ -23,12 +25,15 @@ services:
       target: dev
     container_name: erddap-cms
     ports:
-      - 8080:8080 #erddap 
-      - 5000:5000 #cms
-      - 5679:5678 #debugger
+      - 0.0.0.0:8080:8080 #erddap 
+      - 0.0.0.0:5000:5000 #cms
+      - 0.0.0.0:5679:5678 #debugger
     restart: always
     platform: linux/amd64
     env_file: 0-dev.env
+    environment:
+      TOMCAT_USER_ID: "1500"
+      TOMCAT_GROUP_ID: "1500"
     depends_on:
       db:
         condition: service_healthy

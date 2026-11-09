@@ -29,7 +29,7 @@
   
   <!-- New dataset from file modal -->
   <div class="modal fade" id="addNewDatasetModalfromfile" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addNewDatasetModalfromfile" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" >
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" >
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="addNewDatasetModalfromfile">Add new dataset</h5>
@@ -65,6 +65,29 @@
                   <p class="align-self-center mt-1"></p>
                 </div>
               </div>
+
+              <div id="file-preview-block" class="d-none">
+                <h6 class="mt-2 mb-2 fw-bold">Check &amp; preview</h6>
+                <div id="file-preview-loading" class="d-flex align-items-center gap-2 text-muted d-none">
+                  <div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>
+                  <span>Running preliminary checks on the file...</span>
+                </div>
+                <div id="file-preview-error" class="alert alert-danger d-none" role="alert"></div>
+                <div id="file-preview-content" class="d-none">
+                  <p class="text-muted mb-1" id="file-preview-summary"></p>
+                  <div class="table-responsive" style="max-height: 180px;">
+                    <table class="table table-sm table-striped" id="file-preview-table">
+                      <thead><tr id="file-preview-table-head"></tr></thead>
+                      <tbody id="file-preview-table-body"></tbody>
+                    </table>
+                  </div>
+                  <div class="d-flex flex-wrap gap-3 mb-2 mt-2 small" id="file-preview-checks"></div>
+                  <div id="file-preview-warnings"></div>
+                  <div id="file-preview-success" class="alert alert-success py-1 px-2 mt-2 d-none">Preliminary checks on the file passed. Please fill in the rest of the information below.</div>
+                </div>
+              </div>
+
+              <div id="dataset-form-rest" class="d-none">
               <hr class="mt-1">
               <label class="mt-2" for="typesdataset">Dataset type</label>
               <i data-bs-toggle="tooltip" data-bs-title="Hover the mouse on a selection to see its description" class="bi bi-info-circle"></i>
@@ -90,8 +113,9 @@
               <i data-bs-toggle="tooltip" data-bs-title="Web page with more information about this dataset or the institution's website." class="bi bi-info-circle"></i>
               <input type="url" class="form-control mt-2" name="infoUrl" value="https://" required>
               <label class="mt-2" for="typesdataset">Institution</label>
+              <i data-bs-toggle="tooltip" data-bs-title="Institutions are looked up from ROR (Research Organization Registry, ror.org). Start typing to search." class="bi bi-info-circle"></i>
 
-              <select class="select-institute h-75" placeholder="Select an institute..." autocomplete="off" id="institution"  name="institution"></select>
+              <select class="select-institute" placeholder="Select an institute..." autocomplete="off" id="institution"  name="institution" required></select>
                 
               <div id="latitude" style="display: none;">
                 <label class="mt-2" for="latitude">Latitude</label>
@@ -103,7 +127,8 @@
                 <br><i>It appears that the file doesn't contains a valid longitude, please manually provide it</i> <br>
                 <input type="number" class="form-control mt-2" name="longitude" placeholder="Your dataset longitude..."  min="-180" max="180" step=any disabled="disabled" required>
               </div>
-            </form>  
+              </div>
+            </form>
           </div>
           <div class="modal-footer">
             <div class="progress" style="width: 100%; display: none;">

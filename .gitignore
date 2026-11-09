@@ -11,3 +11,14 @@ frontend/metadata
 erddapy_playground
 *.tar
 frontend/static/nc
+datasets_data
+frontend/__pycache__
+# secrets: only the .example files are tracked, copy them and fill in the values
+.env
+0-dev.env
+1-prod.env
+2-no-multiauth.env
+frontend/multipass-dev.cfg
+frontend/multipass-local.cfg
+frontend/multipass-prod.cfg
+custom/ssl/

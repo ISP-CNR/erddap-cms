@@ -36,3 +36,12 @@ label[for=dt-length-0]
 .ts-wrapper.invalid {
   border-color: #dc3545 !important;
 }
+
+/* tom-select's own .ts-hidden-accessible rule constrains width but not height,
+   so the hidden native <select> keeps its natural height; since it's
+   position:absolute, that still stretches the scrollable size of any ancestor
+   that starts out hidden (e.g. our conditionally-shown form section) -
+   scoped to that section so other tom-selects elsewhere aren't affected */
+#dataset-form-rest .ts-hidden-accessible {
+  height: 1px !important;
+}

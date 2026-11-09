@@ -7,8 +7,12 @@ from flask_simple_captcha import CAPTCHA
 from flask_mail import Mail
 
 app = Flask(__name__, static_url_path = utils.URL_PATH)
+app.jinja_env.globals['NO_MULTIAUTH'] = os.environ['NO_MULTIAUTH']
 app.jinja_env.globals['ERDDAP_TARGET_VERSION'] = 'v2.31.1'
 app.jinja_env.globals['CMS_VERSION'] = os.environ.get('CMS_VERSION', 'dev')
+app.jinja_env.globals['PUBLISHER_NAME'] = os.environ.get('PUBLISHER_NAME', '')
+app.jinja_env.globals['PUBLISHER_URL'] = os.environ.get('PUBLISHER_URL', '')
+
 multipass = Multipass()
 
 class ReverseProxied(object):
@@ -26,7 +30,10 @@ app.wsgi_app = ReverseProxied(app.wsgi_app)
 app.mailer = Mail(app)
 
 app.config.update(
-  SECRET_KEY = '5586a9f0d5ce4fc8a4cd6d87af671df6af01b4cd1aeaf5e758f6de6cbc35dce7',
+  # signs the session cookie that holds the logged-in user, so it must be
+  # secret and different on every instance: anyone who knows it can log in
+  # as any user. No default on purpose - a missing value stops the app.
+  SECRET_KEY = os.environ['SECRET_KEY'],
   SESSION_COOKIE_SECURE = False if app.debug else True
 )
 
@@ -39,8 +46,15 @@ def request_entity_too_large(error):
                  "message": 'File size too large'}, 413)
 
 # initialize multipass
-app.config.from_pyfile('multipass.cfg')
 
+if os.environ['NO_MULTIAUTH'] == 'True':
+    app.config.from_pyfile('multipass-local.cfg')
+else:
+  if os.environ['FLASK_ENV'] == 'development':
+    app.config.from_pyfile('multipass-dev.cfg')
+    
+  elif os.environ['FLASK_ENV'] == "production":
+    app.config.from_pyfile('multipass-prod.cfg')
 
 # fix MULTIPASS_LOGIN_URLS with URL_PATH
 app.config.update(
@@ -53,7 +67,7 @@ for provider, config in app.config['MULTIPASS_AUTH_PROVIDERS'].items():
 # CAPTCHA inizialization
 
 CAPTCHA_CONFIG = {
-  'SECRET_CAPTCHA_KEY': '38pEOPt*2n@LUpD0',  # use for JWT encoding/decoding
+  'SECRET_CAPTCHA_KEY': os.environ['SECRET_KEY'],  # use for JWT encoding/decoding
 
   # CAPTCHA GENERATION SETTINGS
   'EXPIRE_SECONDS': 60 * 10,  # takes precedence over EXPIRE_MINUTES
@@ -75,12 +89,12 @@ SIMPLE_CAPTCHA = CAPTCHA(config=CAPTCHA_CONFIG)
 app = SIMPLE_CAPTCHA.init_app(app)
 
 
-app.config['MAIL_SERVER']= os.environ['ERDDAP_emailSmtpHost'] 
+app.config['MAIL_SERVER']= os.environ['ERDDAP_emailSmtpHost']
 app.config['MAIL_PORT'] = os.environ['ERDDAP_emailSmtpPort']
 app.config['MAIL_USERNAME'] = os.environ['ERDDAP_emailUserName']
 app.config['MAIL_PASSWORD'] = os.environ['ERDDAP_emailPassword']
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] =  os.environ['ERDDAP_emailUseSSL']
+app.config['MAIL_USE_TLS'] = False#True #False
+app.config['MAIL_USE_SSL'] =  os.environ['ERDDAP_emailUseSSL']#False
 
 
 import multiauth

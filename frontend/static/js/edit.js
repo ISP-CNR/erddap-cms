@@ -76,29 +76,67 @@ function validate(id) {
   var spinner = document.getElementById("spinner");
   var modalRelevant = document.getElementById("modal-relevant");
   var modalText = document.getElementById("modal-text");
-  var modalResult = document.getElementById("validation-result");
   var modalAccordion = document.getElementById("logsAccordion");
   modalRelevant.innerText = "";
   modalText.innerText = "";
-  modalResult.innerText = "";
   modalAccordion.classList.add("visually-hidden");
 
   fetch(`${URL_PATH}/api/dataset/xml/validate?id=${id}`)
   .then(response => response.json())
   .then(data => {
     spinner.classList.add("visually-hidden");
-    modalRelevant.innerText = data.relevant_error;
-    modalText.innerText = data.output;
-    modalResult.innerText = data.successfully ? "OK": "Fail";
-    modalAccordion.classList.remove("visually-hidden");
-    if (data.successfully){
-      modalResult.classList.add("bg-success");
-      modalResult.classList.remove("bg-danger");
-    }else{
-      modalResult.classList.remove("bg-success");
-      modalResult.classList.add("bg-danger");
+    if (data.successfully) {
+      renderValidationSuccess(modalRelevant);
+    } else if (data.error_summary) {
+      renderValidationErrorSummary(modalRelevant, data.error_summary);
+    } else {
+      modalRelevant.innerText = data.relevant_error;
     }
+    modalText.innerText = data.output;
+    modalAccordion.classList.remove("visually-hidden");
   });
+}
+
+function renderValidationSuccess(container) {
+  var box = document.createElement("div");
+  box.className = "alert alert-success mb-3";
+
+  var title = document.createElement("div");
+  title.className = "fw-bold mb-1";
+  title.innerHTML = '<i class="bi bi-check-circle-fill"></i> ';
+  title.appendChild(document.createTextNode("The dataset is valid"));
+  box.appendChild(title);
+
+  // the template words the next step for the user's role and the dataset's state
+  var text = document.createElement("div");
+  text.innerHTML = document.getElementById("validation-next-step").innerHTML;
+  box.appendChild(text);
+  container.appendChild(box);
+}
+
+function renderValidationErrorSummary(container, summary) {
+  var box = document.createElement("div");
+  box.className = "alert alert-danger mb-2";
+
+  if (summary.title) {
+    var title = document.createElement("div");
+    title.className = "fw-bold mb-1";
+    title.innerText = summary.title;
+    box.appendChild(title);
+  }
+
+  var line = document.createElement("div");
+  line.className = "font-monospace small text-break";
+  line.innerText = summary.line;
+  box.appendChild(line);
+  container.appendChild(box);
+
+  if (summary.hint) {
+    var hint = document.createElement("div");
+    hint.className = "text-muted mb-3";
+    hint.innerText = summary.hint;
+    container.appendChild(hint);
+  }
 }
 
 function reload(button,id) {
@@ -119,10 +157,10 @@ function reload(button,id) {
     document.getElementById('action-button-text').classList.remove('hide');
     if (data.requested) {
       // dataset is still disabled and only an admin can enable it - nothing
-      // to reload, an email was sent instead (see api.py's reload()). Reflect
-      // that here instead of a full page reload, and keep the button
-      // disabled so a non-admin can't spam the request.
-      document.getElementById('action-button-text').innerText = "Publish requested";
+      // to reload, an email was sent instead (see api.py's reload()). The
+      // button keeps reading "Reload" either way; keep it disabled so a
+      // non-admin can't spam the request, and explain what happened via the
+      // modal below instead of changing the button's own label.
       if (data.already_requested) {
         showMessageModal("Already requested", "An admin was already notified and hasn't enabled this dataset yet.");
       } else {
